@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Label-Less Sorting — Investor Showcase</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════
+   DESIGN TOKENS
+════════════════════════════════════════════ */
+:root {
+  --bg:        #070a0f;
+  --surface:   #0c1018;
+  --card:      #111720;
+  --border:    #1e2736;
+  --border2:   #2a3548;
+  --cyan:      #00d4ff;
+  --cyan-dim:  rgba(0,212,255,0.12);
+  --cyan-glow: rgba(0,212,255,0.25);
+  --green:     #00e87a;
+  --green-dim: rgba(0,232,122,0.1);
+  --amber:     #ffb020;
+  --amber-dim: rgba(255,176,32,0.12);
+  --red:       #ff4545;
+  --purple:    #a78bfa;
+  --purple-dim:rgba(167,139,250,0.12);
+  --white:     #f0f4ff;
+  --muted:     #4a5568;
+  --muted2:    #8896a8;
+}
+
+/* ════════════════════════════════════════════
+   RESET + BASE
+════════════════════════════════════════════ */
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { height:100%; }
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: 'Syne', sans-serif;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+
+/* ════════════════════════════════════════════
+   GLOBAL BACKGROUND GRID
+════════════════════════════════════════════ */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg,rgba(0,212,255,0.025) 1px, transparent 1px);
+  background-size:60px 60px;
+  pointer-events:none; z-index:0;
+}
+
+/* ════════════════════════════════════════════
+   TOP CHROME
+════════════════════════════════════════════ */
+.chrome {
+  flex-shrink:0;
+  background:rgba(7,10,15,0.96);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);
+  z-index:100;
+  position:relative;
+}
+.chrome-top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 36px;
+  border-bottom:1px solid var(--border);
+}
+.brand {
+  font-size:14px;
+  font-weight:800;
+  letter-spacing:2px;
+  text-transform:uppercase;
+}
+.brand em { color:var(--cyan); font-style:normal; }
+
+.chrome-stats {
+  display:flex; gap:28px; align-items:center;
+}
+.cstat { text-align:center; }
+.cstat-val {
+  font-family:'DM Mono',monospace;
+  font-size:16px; font-weight:500;
+  color:var(--cyan); line-height:1;
+}
+.cstat-val.g { color:var(--green); }
+.cstat-val.a { color:var(--amber); }
+.cstat-lbl {
+  font-size:8px; font-weight:400;
+  letter-spacing:2px; text-transform:uppercase;
+  color:var(--muted); margin-top:3px;
+}
+.live-pill {
+  display:flex; align-items:center; gap:7px;
+  font-family:'DM Mono',monospace; font-size:10px;
+  color:var(--green); letter-spacing:2px; text-transform:uppercase;
+}
+.live-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--green);
+  animation:livePulse 1.4s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%,100%{box-shadow:0 0 0 0 rgba(0,232,122,.5);}
+  50%{box-shadow:0 0 0 5px rgba(0,232,122,0);}
+}
+
+/* ── TABS ── */
+.tabs {
+  display:flex; padding:0 36px;
+}
+.tab {
+  padding:12px 24px;
+  font-size:12px; font-weight:700;
+  letter-spacing:2px; text-transform:uppercase;
+  cursor:pointer; border:none;
+  background:transparent; color:var(--muted);
+  border-bottom:2px solid transparent;
+  transition:all .25s; position:relative;
+  white-space:nowrap;
+}
+.tab:hover { color:var(--muted2); }
+.tab.active {
+  color:var(--cyan);
+  border-bottom-color:var(--cyan);
+}
+.tab-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:16px; height:16px; border-radius:50%;
+  background:var(--cyan-dim); color:var(--cyan);
+  font-size:9px; margin-left:6px; font-weight:700;
+}
+
+/* ════════════════════════════════════════════
+   PANELS
+════════════════════════════════════════════ */
+.panels { flex:1; overflow:hidden; position:relative; z-index:1; }
+.panel {
+  position:absolute; inset:0;
+  opacity:0; pointer-events:none;
+  transition:opacity .3s ease;
+  overflow-y:auto; overflow-x:hidden;
+}
+.panel.active { opacity:1; pointer-events:all; }
+
+/* ════════════════════════════════════════════
+   ① OVERVIEW PANEL
+════════════════════════════════════════════ */
+.ov-hero {
+  padding:64px 64px 56px;
+  background:linear-gradient(135deg, #0a1220 0%, var(--bg) 60%);
+  border-bottom:1px solid var(--border);
+  display:grid; grid-template-columns:1fr auto; gap:40px; align-items:end;
+  position:relative; overflow:hidden;
+}
+.ov-hero::before {
+  content:'';
+  position:absolute; top:-100px; right:-100px;
+  width:500px; height:500px;
+  background:radial-gradient(circle,rgba(0,212,255,.1) 0%,transparent 65%);
+  pointer-events:none;
+}
+.ov-eyebrow {
+  font-family:'DM Mono',monospace; font-size:10px;
+  letter-spacing:4px; text-transform:uppercase;
+  color:rgba(0,212,255,.5); margin-bottom:16px;
+  display:flex; align-items:center; gap:12px;
+}
+.ov-eyebrow::before {
+  content:''; width:28px; height:1px;
+  background:var(--cyan); display:block;
+}
+.ov-hero h1 {
+  font-family:'Playfair Display',serif;
+  font-size:clamp(32px,4.5vw,60px);
+  font-weight:900; line-height:1.02; letter-spacing:-1px;
+  margin-bottom:20px;
+}
+.ov-hero h1 em { font-style:italic; color:rgba(0,212,255,.6); }
+.ov-desc {
+  font-size:15px; font-weight:400; line-height:1.75;
+  color:rgba(240,244,255,.55); max-width:520px;
+}
+.hero-kpi {
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(0,212,255,.15);
+  padding:24px 32px; text-align:center; flex-shrink:0;
+}
+.hero-kpi-val {
+  font-family:'Playfair Display',serif;
+  font-size:48px; font-weight:900; color:var(--white); line-height:1;
+}
+.hero-kpi-lbl {
+  font-size:10px; letter-spacing:3px; text-transform:uppercase;
+  color:rgba(0,212,255,.5); margin-top:6px;
+}
+
+/* Problem strip */
+.ov-problem {
+  padding:32px 64px;
+  background:rgba(255,176,32,.05);
+  border-bottom:1px solid rgba(255,176,32,.15);
+  display:grid; grid-template-columns:auto 1fr; gap:24px; align-items:center;
+}
+.prob-icon { font-size:36px; }
+.prob-title {
+  font-family:'Playfair Display',serif;
+  font-size:20px; font-weight:700; color:var(--amber); margin-bottom:6px;
+}
+.prob-body { font-size:14px; color:var(--muted2); line-height:1.7; max-width:700px; }
+
+/* 5-step journey */
+.ov-section { padding:48px 64px 0; }
+.ov-section-title {
+  font-size:10px; font-weight:600; letter-spacing:4px;
+  text-transform:uppercase; color:var(--muted);
+  display:flex; align-items:center; gap:16px; margin-bottom:12px;
+}
+.ov-section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+.ov-section h2 {
+  font-family:'Playfair Display',serif;
+  font-size:clamp(22px,3vw,34px); font-weight:700; margin-bottom:6px;
+}
+.ov-section p {
+  font-size:14px; color:var(--muted2); line-height:1.65;
+  max-width:540px; margin-bottom:32px;
+}
+
+.journey {
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  border:1px solid var(--border);
+  position:relative; margin-bottom:0;
+}
+.journey::before {
+  content:'📦';
+  position:absolute; top:-24px;
+  font-size:18px;
+  animation:jTravel 7s ease-in-out infinite;
+  z-index:5;
+  filter:drop-shadow(0 0 8px rgba(255,176,32,.6));
+}
+@keyframes jTravel {
+  0%  {left:2%;opacity:0;transform:scale(.8);}
+  5%  {opacity:1;transform:scale(1);}
+  95% {opacity:1;}
+  100%{left:95%;opacity:0;}
+}
+.jstep {
+  padding:28px 22px; border-right:1px solid var(--border);
+  background:var(--card); position:relative;
+  transition:background .2s;
+}
+.jstep:last-child { border-right:none; }
+.jstep:hover { background:#141c28; }
+.jstep:not(:last-child)::after {
+  content:'→'; position:absolute;
+  right:-12px; top:50%; transform:translateY(-50%);
+  font-size:16px; color:var(--border2);
+  z-index:2; background:var(--card);
+  transition:background .2s;
+}
+.jstep:hover::after { background:#141c28; }
+.jstep-num {
+  font-family:'Playfair Display',serif;
+  font-size:44px; font-weight:900;
+  color:var(--border); line-height:1;
+  position:absolute; top:14px; right:18px;
+}
+.jstep-ico { font-size:28px; margin-bottom:12px; }
+.jstep-title {
+  font-family:'Playfair Display',serif;
+  font-size:15px; font-weight:700; margin-bottom:7px;
+  line-height:1.2;
+}
+.jstep-desc { font-size:12px; color:var(--muted2); line-height:1.6; font-weight:400; }
+
+/* Decision fork */
+.decision-fork {
+  border:1px solid var(--border); border-top:none;
+  display:grid; grid-template-columns:160px 1fr 1fr 1fr;
+}
+.df-label {
+  background:rgba(0,212,255,.06);
+  border-right:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  padding:20px;
+  writing-mode:vertical-rl; transform:rotate(180deg);
+  font-size:9px; font-weight:600; letter-spacing:3px;
+  text-transform:uppercase; color:var(--cyan);
+}
+.df-card {
+  padding:24px 24px; border-left:1px solid var(--border);
+  transition:background .2s;
+}
+.df-card:hover { background:rgba(0,212,255,.03); }
+.df-pill {
+  font-size:9px; font-weight:600; letter-spacing:2px;
+  text-transform:uppercase; padding:3px 10px;
+  display:inline-block; margin-bottom:10px; border-radius:20px;
+}
+.pgreen { background:rgba(0,232,122,.12); color:var(--green); border:1px solid rgba(0,232,122,.2); }
+.pblue  { background:rgba(0,212,255,.1);  color:var(--cyan);  border:1px solid rgba(0,212,255,.2); }
+.pamber { background:rgba(255,176,32,.1); color:var(--amber); border:1px solid rgba(255,176,32,.2); }
+.df-head {
+  font-family:'Playfair Display',serif;
+  font-size:16px; font-weight:700; margin-bottom:8px;
+}
+.df-body { font-size:12px; color:var(--muted2); line-height:1.65; }
+
+/* Outcomes */
+.outcomes {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  border:1px solid var(--border);
+}
+.oc-card {
+  padding:36px 28px; border-right:1px solid var(--border);
+  transition:background .2s;
+}
+.oc-card:last-child { border-right:none; }
+.oc-card:hover { background:rgba(0,212,255,.03); }
+.oc-ico { font-size:26px; margin-bottom:18px; }
+.oc-val {
+  font-family:'Playfair Display',serif;
+  font-size:40px; font-weight:900; line-height:1;
+  margin-bottom:6px;
+}
+.oc-val.c { color:var(--cyan); }
+.oc-val.g { color:var(--green); }
+.oc-title { font-size:14px; font-weight:700; margin-bottom:6px; }
+.oc-sub { font-size:12px; color:var(--muted2); line-height:1.55; }
+
+/* Benefits */
+.benefits-strip {
+  background:linear-gradient(135deg, #0d1829 0%, #0a1220 100%);
+  border-top:1px solid var(--border);
+  padding:48px 64px;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:40px;
+}
+.ben { }
+.ben-ico { font-size:26px; margin-bottom:14px; }
+.ben h3 {
+  font-family:'Playfair Display',serif;
+  font-size:18px; font-weight:700; margin-bottom:8px;
+}
+.ben p { font-size:13px; color:var(--muted2); line-height:1.7; }
+
+.compliance-row {
+  padding:28px 64px;
+  border-top:1px solid var(--border);
+  display:flex; align-items:center; gap:32px; flex-wrap:wrap;
+  background:rgba(0,0,0,.2);
+}
+.compliance-lbl {
+  font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--muted);
+}
+.cp-pills { display:flex; gap:10px; flex-wrap:wrap; }
+.cp-pill {
+  border:1px solid var(--border); padding:6px 14px;
+  font-size:11px; color:var(--muted2);
+  display:flex; align-items:center; gap:7px;
+}
+.cp-pill::before { content:'✓'; color:var(--green); font-weight:700; }
+
+/* ════════════════════════════════════════════
+   ② LIVE DEMO PANEL
+════════════════════════════════════════════ */
+.demo-wrap {
+  display:flex; flex-direction:column; height:100%;
+}
+
+/* Scene */
+.demo-scene {
+  flex:1; position:relative; overflow:hidden;
+}
+.demo-scene::before {
+  content:''; position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(0,212,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg,rgba(0,212,255,.025) 1px, transparent 1px);
+  background-size:48px 48px; pointer-events:none;
+}
+.d-ground {
+  position:absolute; bottom:0; left:0; right:0; height:52%;
+  background:linear-gradient(180deg, var(--bg) 0%, #06090e 100%);
+}
+.d-floor-lines {
+  position:absolute; bottom:0; left:0; right:0; height:52%;
+  overflow:hidden; opacity:.35;
+}
+.d-floor-lines::after {
+  content:''; position:absolute; bottom:0;
+  width:300%; height:200%;
+  background:repeating-linear-gradient(transparent,transparent 55px,rgba(0,212,255,.06) 55px,rgba(0,212,255,.06) 56px);
+  transform-origin:bottom center;
+  transform:perspective(280px) rotateX(60deg) translateX(-50%);
+  left:50%;
+}
+
+/* Hub */
+.d-hub {
+  position:absolute; top:8%; left:50%; transform:translateX(-50%);
+  width:660px; height:250px;
+}
+.d-wall {
+  position:absolute; inset:0;
+  background:linear-gradient(180deg,#141e30 0%,#0e1620 100%);
+  border:1.5px solid #1e3050; border-radius:4px;
+  box-shadow:0 0 60px rgba(0,212,255,.05), inset 0 1px 0 rgba(255,255,255,.03);
+}
+.d-hub-label {
+  position:absolute; top:10px; left:50%; transform:translateX(-50%);
+  font-family:'DM Mono',monospace; font-size:9px;
+  letter-spacing:4px; text-transform:uppercase;
+  color:rgba(0,212,255,.35); white-space:nowrap;
+}
+.d-dock {
+  position:absolute; bottom:0; left:58px;
+  width:100px; height:88px;
+  background:#060a0f; border:1.5px solid #1e3050;
+  border-bottom:none; border-radius:2px 2px 0 0;
+  overflow:hidden; transition:background .4s;
+}
+.d-dock.open { background:#0a1525; border-color:var(--cyan); box-shadow:0 0 20px rgba(0,212,255,.18); }
+.d-dock-stripes {
+  position:absolute; inset:0;
+  background:repeating-linear-gradient(90deg,rgba(255,176,32,.08) 0,rgba(255,176,32,.08) 8px,transparent 8px,transparent 20px);
+  opacity:0; transition:opacity .3s;
+}
+.d-dock.open .d-dock-stripes { opacity:1; }
+.d-windows { position:absolute; top:38px; right:36px; display:flex; gap:10px; }
+.d-win {
+  width:26px; height:20px;
+  background:rgba(0,212,255,.04);
+  border:1px solid rgba(0,212,255,.12);
+  border-radius:2px; transition:all .3s;
+}
+.d-win.lit {
+  background:rgba(0,212,255,.18);
+  border-color:rgba(0,212,255,.4);
+  box-shadow:0 0 10px rgba(0,212,255,.18);
+}
+
+/* Conveyor */
+.d-conveyor {
+  position:absolute; bottom:0; left:158px; right:158px;
+  height:34px; background:#0f1620;
+  border:1px solid #1e2a3a; border-radius:3px;
+  overflow:visible; /* Allow camera to protrude */
+}
+.d-conv-strips {
+  position:absolute; inset:0;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent 22px);
+  animation:convAnim .5s linear infinite paused;
+  border-radius:3px; overflow:hidden;
+}
+.d-conveyor.running .d-conv-strips { animation-play-state:running; }
+@keyframes convAnim { from{background-position:0 0;} to{background-position:22px 0;} }
+
+/* Camera */
+.d-cam-station {
+  position:absolute; top:-50px; left:50%; transform:translateX(-50%);
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+}
+.d-cam-pole { width:3px; height:36px; background:#253448; border-radius:2px; }
+.d-cam-head {
+  width:44px; height:28px;
+  background:#1a2a40; border:1.5px solid #2a3a50;
+  border-radius:4px; display:flex; align-items:center;
+  justify-content:center; font-size:20px; position:relative;
+  z-index:100;
+  transition:border-color .3s, box-shadow .3s;
+}
+.d-cam-head.scanning {
+  border-color:var(--cyan);
+  background:#2a3a50;
+  box-shadow:0 0 30px rgba(0,212,255,.8);
+}
+.d-cam-flash {
+  position:absolute; inset:-20px; border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,0.9) 0%, rgba(0,212,255,.8) 40%, transparent 70%);
+  opacity:0; pointer-events:none; mix-blend-mode:screen;
+}
+.d-cam-head.scanning .d-cam-flash {
+  animation:flashP .7s ease-out 3;
+}
+@keyframes flashP {
+  0%{opacity:1;transform:scale(.8);}
+  100%{opacity:0;transform:scale(2.5);}
+}
+.d-scan-beam {
+  position:absolute; bottom:-180px; left:50%; transform:translateX(-50%);
+  width:140px; height:180px;
+  background:linear-gradient(180deg,rgba(0,212,255,.4),transparent);
+  clip-path:polygon(30% 0%,70% 0%,100% 100%,0% 100%);
+  opacity:0; pointer-events:none; transition:opacity .2s;
+  z-index:50;
+}
+.d-cam-head.scanning ~ .d-scan-beam { opacity:1; }
+
+/* AI Panel inside hub */
+.d-ai-panel {
+  position:absolute; top:18px; right:36px;
+  width:148px; height:98px;
+  background:rgba(8,14,24,.92);
+  border:1px solid var(--border); border-radius:4px;
+  padding:10px; transition:border-color .3s, box-shadow .3s; overflow:hidden;
+}
+.d-ai-panel.active {
+  border-color:var(--purple);
+  box-shadow:0 0 20px rgba(167,139,250,.2);
+}
+.d-ai-lbl {
+  font-family:'DM Mono',monospace; font-size:8px;
+  letter-spacing:2px; text-transform:uppercase; color:var(--purple); margin-bottom:6px;
+}
+.d-ai-bars { display:flex; flex-direction:column; gap:4px; }
+.d-bar-row { display:flex; align-items:center; gap:6px; }
+.d-bar-name { font-family:'DM Mono',monospace; font-size:8px; color:var(--muted); width:38px; }
+.d-bar-track { flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.d-bar-fill { height:100%; border-radius:2px; background:var(--purple); width:0%; transition:width .55s ease; }
+
+/* Chutes */
+.d-chutes {
+  position:absolute; bottom:0; right:36px;
+  display:flex; flex-direction:column; gap:5px;
+}
+.d-chute {
+  width:86px; height:26px;
+  background:#0e1620; border:1px solid var(--border);
+  border-radius:3px; display:flex;
+  align-items:center; padding:0 10px; gap:8px;
+  transition:border-color .3s, background .3s;
+}
+.d-chute.active {
+  border-color:var(--green);
+  background:rgba(0,232,122,.08);
+}
+.d-chute-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--border); transition:all .3s;
+}
+.d-chute.active .d-chute-dot {
+  background:var(--green); box-shadow:0 0 7px var(--green);
+}
+.d-chute-name {
+  font-family:'DM Mono',monospace; font-size:9px;
+  color:var(--muted); letter-spacing:1px; transition:color .3s;
+}
+.d-chute.active .d-chute-name { color:var(--green); }
+
+/* Truck */
+.d-truck {
+  position:absolute; bottom:52%;
+  left:-180px; transition:left 2.5s cubic-bezier(.25,.1,.25,1);
+  z-index:10;
+  filter:drop-shadow(0 8px 24px rgba(0,0,0,.5));
+}
+.d-truck.arrived { left:calc(50% - 440px); }
+
+/* Parcel */
+.d-parcel {
+  position:absolute; width:26px; height:20px;
+  background:var(--amber); border-radius:3px;
+  box-shadow:0 2px 12px rgba(255,176,32,.4);
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; opacity:0;
+  transition:opacity .3s; z-index:20; pointer-events:none;
+}
+.d-parcel::after {
+  content:''; position:absolute;
+  top:50%; left:10%; right:10%; height:2px;
+  background:rgba(0,0,0,.2); transform:translateY(-50%); border-radius:1px;
+}
+.d-parcel.vis { opacity:1; }
+.d-parcel.scanned { box-shadow:0 0 18px rgba(0,212,255,.8),0 2px 12px rgba(255,176,32,.4); background:#ffcc60; }
+.d-parcel.routed { background:var(--green); box-shadow:0 0 16px rgba(0,232,122,.6); }
+
+/* ID popup */
+.d-id-popup {
+  position:absolute;
+  background:rgba(8,14,24,.96); border:1px solid var(--cyan);
+  border-radius:4px; padding:7px 12px;
+  font-family:'DM Mono',monospace; font-size:10px; color:var(--cyan);
+  opacity:0; transform:translateY(8px);
+  transition:opacity .3s, transform .3s;
+  z-index:30; pointer-events:none; white-space:nowrap;
+}
+.d-id-popup.show { opacity:1; transform:translateY(0); }
+
+/* Cloud SVG overlay */
+#dCloudSvg {
+  position:absolute; inset:0; width:100%; height:100%;
+  pointer-events:none; z-index:5;
+}
+
+/* Demo side panel */
+.demo-side {
+  width:100%; height:260px; flex-shrink:0;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  display:flex; flex-direction:row; overflow:hidden;
+}
+.dp-left-panel {
+  width:320px; flex-shrink:0;
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column;
+}
+.dp-right-panel {
+  flex:1; display:flex; flex-direction:column;
+  overflow:hidden;
+}
+.dp-title {
+  padding:18px 22px 14px;
+  font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase;
+  color:var(--muted); border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.dp-progress { height:3px; background:var(--border); flex-shrink:0; }
+.dp-progress-fill {
+  height:100%; width:0%;
+  background:linear-gradient(90deg,var(--cyan),var(--purple));
+  transition:width .5s ease;
+}
+.dp-steps { flex:1; overflow-x:auto; overflow-y:hidden; padding:14px; display:flex; flex-direction:row; gap:12px; }
+
+.dp-step {
+  width:200px; flex-shrink:0;
+  display:flex; gap:11px; padding:11px 13px;
+  border-radius:5px; border:1px solid transparent;
+  opacity:.32; transition:all .35s ease;
+}
+.dp-step.active {
+  opacity:1; border-color:rgba(0,212,255,.2);
+  background:rgba(0,212,255,.05);
+}
+.dp-step.done { opacity:.65; border-color:rgba(0,232,122,.12); background:rgba(0,232,122,.025); }
+
+.dp-step-ico {
+  width:34px; height:34px; border-radius:50%;
+  background:var(--card); border:1.5px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  font-size:15px; flex-shrink:0; transition:all .35s; position:relative;
+}
+.dp-step.active .dp-step-ico {
+  border-color:var(--cyan); background:rgba(0,212,255,.1);
+  box-shadow:0 0 14px rgba(0,212,255,.2);
+}
+.dp-step.done .dp-step-ico {
+  border-color:var(--green); background:rgba(0,232,122,.1);
+}
+.dp-step.active .dp-step-ico::after {
+  content:''; position:absolute; inset:0;
+  border-radius:50%; border:2px solid var(--cyan);
+  animation:ringP 1.2s ease-out infinite;
+}
+@keyframes ringP {
+  0%{transform:scale(1);opacity:.6;}
+  100%{transform:scale(1.85);opacity:0;}
+}
+.dp-step-body { flex:1; }
+.dp-step-name { font-size:12px; font-weight:700; color:var(--white); margin-bottom:2px; }
+.dp-step-detail {
+  font-family:'DM Mono',monospace; font-size:9px;
+  color:var(--muted); line-height:1.5;
+}
+.dp-step.active .dp-step-detail { color:rgba(0,212,255,.65); }
+.dp-step.done .dp-step-detail { color:rgba(0,232,122,.55); }
+.dp-step-tick { font-size:13px; flex-shrink:0; opacity:0; transition:opacity .3s; align-self:center; }
+.dp-step.done .dp-step-tick { opacity:1; }
+
+.dp-narrative {
+  padding:14px 20px; border-top:1px solid var(--border);
+  background:rgba(0,0,0,.2); flex-shrink:0; min-height:76px;
+}
+.dp-narr-text { font-size:12px; color:rgba(240,244,255,.75); line-height:1.65; }
+.dp-narr-text .hl { color:var(--cyan); font-weight:700; }
+
+.dp-controls {
+  padding:14px 20px; border-top:1px solid var(--border);
+  display:flex; gap:8px; flex-shrink:0;
+}
+.dbtn {
+  flex:1; padding:9px;
+  font-family:'Syne',sans-serif; font-size:11px; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase;
+  border:none; border-radius:4px; cursor:pointer; transition:all .2s;
+}
+.dbtn-p { background:var(--cyan); color:var(--bg); }
+.dbtn-p:hover { background:#33ddff; transform:translateY(-1px); }
+.dbtn-s {
+  background:var(--card); color:var(--muted);
+  border:1px solid var(--border);
+}
+.dbtn-s:hover { border-color:var(--muted); color:var(--white); }
+
+/* ════════════════════════════════════════════
+   ③ BUSINESS FLOW PANEL
+════════════════════════════════════════════ */
+.bf-wrap { padding:48px 56px 64px; }
+.bf-title-block { margin-bottom:40px; }
+.bf-eyebrow {
+  font-size:10px; letter-spacing:4px; text-transform:uppercase;
+  color:var(--cyan); opacity:.6; margin-bottom:12px;
+  display:flex; align-items:center; gap:10px;
+}
+.bf-eyebrow::before { content:''; width:20px; height:1px; background:var(--cyan); }
+.bf-title-block h2 {
+  font-family:'Playfair Display',serif;
+  font-size:clamp(24px,3.5vw,42px); font-weight:700; margin-bottom:8px;
+}
+.bf-title-block p { font-size:14px; color:var(--muted2); line-height:1.65; max-width:560px; }
+
+/* Phase blocks */
+.phases { display:flex; flex-direction:column; gap:0; }
+.phase {
+  border:1px solid var(--border);
+  animation:fadeUp .5s ease both;
+}
+.phase + .phase { border-top:none; }
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.phase:nth-child(1){animation-delay:.05s;}
+.phase:nth-child(2){animation-delay:.1s;}
+.phase:nth-child(3){animation-delay:.15s;}
+.phase:nth-child(4){animation-delay:.2s;}
+.phase:nth-child(5){animation-delay:.25s;}
+
+.phase-header {
+  display:flex; align-items:center; gap:16px;
+  padding:14px 24px;
+  background:rgba(0,212,255,.03);
+  border-bottom:1px solid var(--border);
+}
+.phase-num {
+  font-family:'DM Mono',monospace; font-size:10px;
+  font-weight:500; letter-spacing:2px;
+  padding:3px 10px; border-radius:20px;
+  flex-shrink:0;
+}
+.ph1 { background:rgba(0,212,255,.1); color:var(--cyan); border:1px solid rgba(0,212,255,.2); }
+.ph2 { background:rgba(255,176,32,.1); color:var(--amber); border:1px solid rgba(255,176,32,.2); }
+.ph3 { background:rgba(167,139,250,.1); color:var(--purple); border:1px solid rgba(167,139,250,.2); }
+.ph4 { background:rgba(0,212,255,.1); color:var(--cyan); border:1px solid rgba(0,212,255,.2); }
+.ph5 { background:rgba(0,232,122,.1); color:var(--green); border:1px solid rgba(0,232,122,.2); }
+
+.phase-title {
+  font-size:14px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.5px;
+}
+.phase-subtitle { font-size:12px; color:var(--muted2); margin-left:auto; }
+
+.phase-nodes {
+  display:flex; align-items:stretch;
+}
+.p-node {
+  flex:1; padding:22px 22px; border-right:1px solid var(--border);
+  background:var(--card); transition:background .2s; position:relative;
+}
+.p-node:last-child { border-right:none; }
+.p-node:hover { background:#141c2a; }
+.p-node-type {
+  font-family:'DM Mono',monospace; font-size:8px;
+  letter-spacing:2px; text-transform:uppercase;
+  margin-bottom:6px; display:flex; align-items:center; gap:5px;
+}
+.p-node-title { font-size:14px; font-weight:700; margin-bottom:5px; line-height:1.2; }
+.p-node-desc { font-size:11px; color:var(--muted2); line-height:1.55; }
+.p-arrow {
+  display:flex; align-items:center; justify-content:center;
+  width:44px; flex-shrink:0;
+  background:rgba(0,212,255,.03); border-right:1px solid var(--border);
+  font-size:16px; color:var(--border2);
+  position:relative; overflow:hidden;
+}
+.p-arrow::after {
+  content:'▶'; color:rgba(0,212,255,.4);
+  animation:arrowPulse 2s ease-in-out infinite;
+}
+@keyframes arrowPulse{
+  0%,100%{opacity:.4;transform:translateX(-3px);}
+  50%{opacity:1;transform:translateX(3px);}
+}
+.p-arrow-line {
+  position:absolute; inset:0;
+  background:repeating-linear-gradient(90deg,rgba(0,212,255,.07) 0,rgba(0,212,255,.07) 5px,transparent 5px,transparent 10px);
+  animation:beltMove .8s linear infinite;
+}
+@keyframes beltMove{from{background-position:0 0;}to{background-position:10px 0;}}
+
+/* Fork cards */
+.bf-fork {
+  display:grid; grid-template-columns:120px 1fr 1fr 1fr;
+  border:1px solid var(--border); border-top:none;
+}
+.bf-fork-lbl {
+  background:rgba(0,0,0,.2); border-right:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  writing-mode:vertical-rl; transform:rotate(180deg);
+  font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--muted);
+}
+.bf-fork-card {
+  padding:20px 22px; border-left:1px solid var(--border);
+  transition:background .2s;
+}
+.bf-fork-card:hover { background:rgba(0,212,255,.03); }
+.bf-fc-head {
+  font-size:13px; font-weight:700; margin-bottom:6px;
+}
+.bf-fc-body { font-size:11px; color:var(--muted2); line-height:1.6; }
+
+/* ════════════════════════════════════════════
+   ④ TECHNICAL FLOW PANEL
+════════════════════════════════════════════ */
+.tf-wrap { padding:40px 56px 64px; }
+.tf-grid {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:0; border:1px solid var(--border);
+}
+.tf-card {
+  padding:24px; border-right:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  background:var(--card); transition:background .2s;
+  animation:fadeUp .5s ease both;
+}
+.tf-card:hover { background:#131b28; }
+.tf-card:nth-child(3n) { border-right:none; }
+.tf-card:nth-child(7),.tf-card:nth-child(8),.tf-card:nth-child(9) { border-bottom:none; }
+.tf-card:nth-child(1){animation-delay:.05s;} .tf-card:nth-child(2){animation-delay:.08s;}
+.tf-card:nth-child(3){animation-delay:.11s;} .tf-card:nth-child(4){animation-delay:.14s;}
+.tf-card:nth-child(5){animation-delay:.17s;} .tf-card:nth-child(6){animation-delay:.20s;}
+.tf-card:nth-child(7){animation-delay:.23s;} .tf-card:nth-child(8){animation-delay:.26s;}
+.tf-card:nth-child(9){animation-delay:.29s;}
+
+.tf-badge {
+  font-family:'DM Mono',monospace; font-size:9px;
+  letter-spacing:2px; text-transform:uppercase;
+  padding:2px 8px; margin-bottom:12px; display:inline-block;
+  border-radius:2px;
+}
+.tf-b-cyan  { background:var(--cyan-dim);   color:var(--cyan);   border:1px solid rgba(0,212,255,.2); }
+.tf-b-amber { background:var(--amber-dim);  color:var(--amber);  border:1px solid rgba(255,176,32,.2); }
+.tf-b-green { background:var(--green-dim);  color:var(--green);  border:1px solid rgba(0,232,122,.2); }
+.tf-b-red   { background:rgba(255,69,69,.1);color:var(--red);    border:1px solid rgba(255,69,69,.2); }
+.tf-b-purple{ background:var(--purple-dim); color:var(--purple); border:1px solid rgba(167,139,250,.2); }
+.tf-b-muted { background:rgba(74,85,104,.15);color:var(--muted2);border:1px solid var(--border); }
+
+.tf-card-title { font-size:15px; font-weight:700; margin-bottom:8px; line-height:1.2; }
+.tf-card-desc { font-size:12px; color:var(--muted2); line-height:1.6; margin-bottom:14px; }
+.tf-specs { display:flex; flex-direction:column; gap:4px; }
+.tf-spec {
+  display:flex; align-items:center; gap:8px;
+  font-family:'DM Mono',monospace; font-size:10px; color:var(--muted2);
+}
+.tf-spec::before { content:'›'; color:var(--cyan); font-size:14px; }
+.tf-spec b { color:var(--white); }
+
+/* Fallback flows section */
+.tf-fallbacks {
+  margin-top:32px;
+  border:1px solid var(--border);
+}
+.tf-fb-header {
+  padding:14px 24px;
+  background:rgba(255,69,69,.05);
+  border-bottom:1px solid var(--border);
+  font-size:10px; font-weight:700; letter-spacing:3px;
+  text-transform:uppercase; color:var(--red);
+  display:flex; align-items:center; gap:10px;
+}
+.tf-fb-header::before { content:'⚡'; }
+.tf-fb-grid {
+  display:grid; grid-template-columns:repeat(3,1fr);
+}
+.tf-fb-card {
+  padding:20px 22px; border-right:1px solid var(--border);
+  transition:background .2s;
+}
+.tf-fb-card:last-child { border-right:none; }
+.tf-fb-card:hover { background:rgba(255,69,69,.03); }
+.tf-fb-scenario {
+  font-family:'DM Mono',monospace; font-size:9px;
+  letter-spacing:2px; text-transform:uppercase;
+  color:var(--red); margin-bottom:8px;
+  display:flex; align-items:center; gap:6px;
+}
+.tf-fb-title { font-size:13px; font-weight:700; margin-bottom:6px; }
+.tf-fb-body { font-size:11px; color:var(--muted2); line-height:1.6; }
+
+/* Metrics row */
+.tf-metrics {
+  margin-top:24px;
+  display:grid; grid-template-columns:repeat(7,1fr);
+  border:1px solid var(--border);
+}
+.tf-metric {
+  padding:20px 16px; border-right:1px solid var(--border);
+  text-align:center;
+}
+.tf-metric:last-child { border-right:none; }
+.tf-m-val {
+  font-family:'Playfair Display',serif;
+  font-size:22px; font-weight:900; color:var(--cyan); line-height:1;
+}
+.tf-m-val.g { color:var(--green); }
+.tf-m-val.a { color:var(--amber); }
+.tf-m-lbl {
+  font-family:'DM Mono',monospace; font-size:8px;
+  letter-spacing:2px; text-transform:uppercase;
+  color:var(--muted); margin-top:5px;
+}
+
+/* footer section */
+.tf-legend {
+  margin-top:24px; padding:16px 20px;
+  border:1px solid var(--border);
+  display:flex; gap:20px; flex-wrap:wrap; align-items:center;
+  background:rgba(0,0,0,.15);
+}
+.tf-leg-item {
+  display:flex; align-items:center; gap:7px;
+  font-family:'DM Mono',monospace; font-size:9px;
+  color:var(--muted); letter-spacing:1px;
+}
+.tf-leg-dot {
+  width:8px; height:8px; border-radius:50%; flex-shrink:0;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════ CHROME ══════════════════════════════════════ -->
+<div class="chrome">
+  <div class="chrome-top">
+    <div class="brand">Label<em>-Less</em> Sorting System</div>
+    <div class="chrome-stats">
+      <div class="cstat"><div class="cstat-val" id="gCounter">0</div><div class="cstat-lbl">Parcels Sorted</div></div>
+      <div class="cstat"><div class="cstat-val g">99.4%</div><div class="cstat-lbl">Accuracy</div></div>
+      <div class="cstat"><div class="cstat-val a" id="gLatency">—</div><div class="cstat-lbl">Latency</div></div>
+    </div>
+    <div class="live-pill"><div class="live-dot"></div>Investor Showcase</div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(0)">🏠 Overview</button>
+    <button class="tab" onclick="switchTab(1)">▶ Live Demo <span class="tab-badge">!</span></button>
+    <button class="tab" onclick="switchTab(2)">📋 Business Flow</button>
+    <button class="tab" onclick="switchTab(3)">⚙️ Technical Detail</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ PANELS ══════════════════════════════════════ -->
+<div class="panels">
+
+<!-- ① OVERVIEW ══════════════════════════════ -->
+<div class="panel active" id="tab0">
+  <div class="ov-hero">
+    <div>
+      <div class="ov-eyebrow">Executive Overview · Confidential</div>
+      <h1>Sorting Parcels<br><em>Without a Label.</em></h1>
+      <p class="ov-desc">Our AI-powered system identifies and routes every parcel purely from its visual appearance — no barcodes, no labels, no manual scanning. Faster, smarter, and more resilient than anything on the market.</p>
+    </div>
+    <div class="hero-kpi">
+      <div class="hero-kpi-val">99.4%</div>
+      <div class="hero-kpi-lbl">Sort Accuracy</div>
+    </div>
+  </div>
+
+  <div class="ov-problem">
+    <div class="prob-icon">⚠️</div>
+    <div>
+      <div class="prob-title">The Problem We're Solving</div>
+      <p class="prob-body">Every year, billions of parcels fail to sort correctly because labels are damaged, missing, or unreadable. This causes delays, customer complaints, and costly manual re-processing. Traditional barcode systems have no fallback. We built one.</p>
+    </div>
+  </div>
+
+  <div class="ov-section">
+    <div class="ov-section-title">How It Works</div>
+    <h2>Five Steps from Arrival to Dispatch</h2>
+    <p>Our end-to-end process is fully automated. A parcel enters the hub and exits sorted — in under 200 milliseconds.</p>
+
+    <div class="journey">
+      <div class="jstep"><div class="jstep-num">1</div><div class="jstep-ico">🚛</div><div class="jstep-title">Parcel Arrives</div><p class="jstep-desc">Vehicle docks at the hub. Parcel placed on the intake conveyor belt.</p></div>
+      <div class="jstep"><div class="jstep-num">2</div><div class="jstep-ico">📷</div><div class="jstep-title">Cameras Capture It</div><p class="jstep-desc">Four cameras photograph every angle simultaneously while the parcel keeps moving.</p></div>
+      <div class="jstep"><div class="jstep-num">3</div><div class="jstep-ico">🧠</div><div class="jstep-title">AI Identifies It</div><p class="jstep-desc">Our AI reads its unique visual fingerprint and matches it to a profile or creates one instantly.</p></div>
+      <div class="jstep"><div class="jstep-num">4</div><div class="jstep-ico">🗺️</div><div class="jstep-title">Routing Decision</div><p class="jstep-desc">Destination determined in milliseconds using local rules or cloud logic.</p></div>
+      <div class="jstep"><div class="jstep-num">5</div><div class="jstep-ico">✅</div><div class="jstep-title">Sorted & Dispatched</div><p class="jstep-desc">Gate diverts the parcel to the correct outbound chute. Total time: &lt;200ms.</p></div>
+    </div>
+
+    <div class="decision-fork">
+      <div class="df-label">What happens when…</div>
+      <div class="df-card"><div class="df-pill pgreen">✓ Known Parcel</div><div class="df-head">We've seen it before</div><p class="df-body">Matched to an existing profile above 87% confidence. History updated and routed instantly — no human involvement.</p></div>
+      <div class="df-card"><div class="df-pill pblue">+ New Parcel</div><div class="df-head">Brand new to the system</div><p class="df-body">A fresh digital identity is created on the spot and the parcel is routed just as quickly as any other.</p></div>
+      <div class="df-card"><div class="df-pill pamber">⚡ System Disruption</div><div class="df-head">Something goes wrong</div><p class="df-body">Built-in fallbacks ensure parcels keep moving even if the network is down or a component fails. Zero downtime by design.</p></div>
+    </div>
+  </div>
+
+  <div class="ov-section" style="margin-top:48px;">
+    <div class="ov-section-title">Business Outcomes</div>
+    <h2>What This Means for the Business</h2>
+    <p>Real, measurable impact from day one of deployment.</p>
+    <div class="outcomes">
+      <div class="oc-card"><div class="oc-ico">⚡</div><div class="oc-val c">&lt;200ms</div><div class="oc-title">End-to-End Speed</div><p class="oc-sub">Capture to sort instruction — faster than a human blink. Throughput limited only by conveyor speed.</p></div>
+      <div class="oc-card"><div class="oc-ico">🎯</div><div class="oc-val g">99.4%</div><div class="oc-title">Sort Accuracy</div><p class="oc-sub">Dramatically fewer misrouted parcels, fewer complaints, and lower re-processing costs.</p></div>
+      <div class="oc-card"><div class="oc-ico">🔄</div><div class="oc-val">Zero</div><div class="oc-title">Downtime by Design</div><p class="oc-sub">Automatic fallbacks keep the system sorting through outages and component failures.</p></div>
+      <div class="oc-card"><div class="oc-ico">📈</div><div class="oc-val c">∞</div><div class="oc-title">Scales Without Limits</div><p class="oc-sub">From 1,000 to 1,000,000 parcels per day — scales seamlessly with no extra headcount.</p></div>
+    </div>
+  </div>
+
+  <div class="benefits-strip">
+    <div class="ben"><div class="ben-ico">🏭</div><h3>No Labels Required</h3><p>Damaged, missing, or unreadable labels are no longer a problem. Our AI works from the physical parcel itself — making every item sortable, every time.</p></div>
+    <div class="ben"><div class="ben-ico">🌐</div><h3>Works Everywhere</h3><p>Operates fully offline at remote sites, synchronises automatically when reconnected. One system, any location, any network condition.</p></div>
+    <div class="ben"><div class="ben-ico">🔒</div><h3>Compliant from Day One</h3><p>Privacy regulations built into the process. Faces and personal data automatically anonymised before any storage — GDPR and CCPA ready.</p></div>
+  </div>
+
+  <div class="compliance-row">
+    <div class="compliance-lbl">Compliance</div>
+    <div class="cp-pills">
+      <div class="cp-pill">GDPR Ready</div>
+      <div class="cp-pill">CCPA Compliant</div>
+      <div class="cp-pill">Data Anonymisation</div>
+      <div class="cp-pill">Audit Logging</div>
+      <div class="cp-pill">Offline-First Architecture</div>
+    </div>
+  </div>
+</div>
+
+<!-- ② LIVE DEMO ══════════════════════════════ -->
+<div class="panel" id="tab1">
+  <div class="demo-wrap" style="height:100%;">
+    <div class="demo-scene" id="dScene">
+      <div class="d-ground"></div>
+      <div class="d-floor-lines"></div>
+
+      <div class="d-hub" id="dHub">
+        <div class="d-wall"></div>
+        <div class="d-hub-label">SORTING HUB · ZONE A</div>
+        <div class="d-windows">
+          <div class="d-win" id="dw1"></div>
+          <div class="d-win" id="dw2"></div>
+          <div class="d-win" id="dw3"></div>
+        </div>
+        <div class="d-dock" id="dDock"><div class="d-dock-stripes"></div></div>
+
+        <div class="d-ai-panel" id="dAiPanel">
+          <div class="d-ai-lbl">🧠 AI Vision</div>
+          <div class="d-ai-bars">
+            <div class="d-bar-row"><div class="d-bar-name">Shape</div><div class="d-bar-track"><div class="d-bar-fill" id="db1"></div></div></div>
+            <div class="d-bar-row"><div class="d-bar-name">Texture</div><div class="d-bar-track"><div class="d-bar-fill" id="db2"></div></div></div>
+            <div class="d-bar-row"><div class="d-bar-name">Colour</div><div class="d-bar-track"><div class="d-bar-fill" id="db3"></div></div></div>
+            <div class="d-bar-row"><div class="d-bar-name">Match</div><div class="d-bar-track"><div class="d-bar-fill" id="db4" style="background:var(--green);"></div></div></div>
+          </div>
+        </div>
+
+        <div class="d-conveyor" id="dConveyor">
+          <div class="d-conv-strips"></div>
+          <div class="d-cam-station" id="dCamStation">
+            <div class="d-cam-head" id="dCamHead">📷<div class="d-cam-flash"></div></div>
+            <div class="d-scan-beam" id="dScanBeam"></div>
+            <div class="d-cam-pole"></div>
+          </div>
+        </div>
+
+        <div class="d-chutes">
+          <div class="d-chute" id="dcA"><div class="d-chute-dot"></div><div class="d-chute-name">Zone A</div></div>
+          <div class="d-chute" id="dcB"><div class="d-chute-dot"></div><div class="d-chute-name">Zone B</div></div>
+          <div class="d-chute" id="dcC"><div class="d-chute-dot"></div><div class="d-chute-name">Zone C</div></div>
+        </div>
+      </div>
+
+      <!-- TRUCK SVG -->
+      <div class="d-truck" id="dTruck">
+        <svg width="168" height="78" viewBox="0 0 168 78" fill="none">
+          <rect x="30" y="8" width="128" height="50" rx="3" fill="#1a2e4a" stroke="#2a4060" stroke-width="1.5"/>
+          <rect x="38" y="15" width="112" height="35" rx="2" fill="#142238" stroke="#1e3050" stroke-width="1"/>
+          <line x1="80" y1="15" x2="80" y2="50" stroke="#1e3050" stroke-width="1"/>
+          <line x1="108" y1="15" x2="108" y2="50" stroke="#1e3050" stroke-width="1"/>
+          <rect x="54" y="22" width="78" height="18" rx="2" fill="rgba(0,212,255,.05)" stroke="rgba(0,212,255,.12)" stroke-width="1"/>
+          <text x="93" y="35" text-anchor="middle" font-family="Syne" font-size="7" font-weight="700" fill="rgba(0,212,255,.4)" letter-spacing="2">LOGISTICS</text>
+          <rect x="0" y="17" width="36" height="41" rx="3" fill="#1e3a5f" stroke="#2a4a70" stroke-width="1.5"/>
+          <rect x="6" y="21" width="22" height="15" rx="2" fill="rgba(0,212,255,.1)" stroke="rgba(0,212,255,.28)" stroke-width="1"/>
+          <rect x="2" y="42" width="10" height="12" rx="1" fill="#111e30" stroke="#1e3050" stroke-width="1"/>
+          <rect x="2" y="37" width="8" height="4" rx="1" fill="rgba(255,176,32,.8)"/>
+          <circle cx="22" cy="66" r="10" fill="#0a0f18" stroke="#1e2a3a" stroke-width="2"/>
+          <circle cx="22" cy="66" r="5" fill="#141e2a" stroke="#2a3a50" stroke-width="1"/>
+          <circle cx="65" cy="66" r="10" fill="#0a0f18" stroke="#1e2a3a" stroke-width="2"/>
+          <circle cx="65" cy="66" r="5" fill="#141e2a" stroke="#2a3a50" stroke-width="1"/>
+          <circle cx="108" cy="66" r="10" fill="#0a0f18" stroke="#1e2a3a" stroke-width="2"/>
+          <circle cx="108" cy="66" r="5" fill="#141e2a" stroke="#2a3a50" stroke-width="1"/>
+          <circle cx="146" cy="66" r="10" fill="#0a0f18" stroke="#1e2a3a" stroke-width="2"/>
+          <circle cx="146" cy="66" r="5" fill="#141e2a" stroke="#2a3a50" stroke-width="1"/>
+        </svg>
+      </div>
+
+      <div class="d-parcel" id="dParcel">📦</div>
+      <div class="d-id-popup" id="dIdPopup">ID: PCL-2024-00847 · MATCH 98.7%</div>
+
+      <svg id="dCloudSvg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;">
+        <defs>
+          <marker id="cArr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L6,3 z" fill="rgba(0,212,255,.55)"/>
+          </marker>
+        </defs>
+        <path id="dCloudLine" d="" stroke="rgba(0,212,255,.3)" stroke-width="1.5" stroke-dasharray="6,4" fill="none" marker-end="url(#cArr)" opacity="0" style="animation:cDash 1.2s linear infinite;"/>
+        <text id="dCloudIcon" x="0" y="0" font-size="26" opacity="0" text-anchor="middle" dominant-baseline="central">☁️</text>
+      </svg>
+      <style>@keyframes cDash{from{stroke-dashoffset:40;}to{stroke-dashoffset:0;}}</style>
+    </div>
+
+    <div class="demo-side">
+      <div class="dp-left-panel">
+        <div class="dp-narrative" id="dNarrative">
+          <div class="dp-narr-text" id="dNarrText">Press <span class="hl">Start Simulation</span> </div>
+        </div>
+        <div class="dp-controls">
+          <button class="dbtn dbtn-p" id="dStartBtn" onclick="demoStart()">▶ Start Simulation</button>
+          <button class="dbtn dbtn-s" onclick="demoReset()">↺ Reset</button>
+        </div>
+      </div>
+      <div class="dp-right-panel">
+        <div class="dp-title">Journey Breakdown</div>
+        <div class="dp-progress"><div class="dp-progress-fill" id="dProgress"></div></div>
+        <div class="dp-steps" id="dSteps">
+          <div class="dp-step" id="ds0"><div class="dp-step-ico">🚛</div><div class="dp-step-body"><div class="dp-step-name">Truck Arrives</div><div class="dp-step-detail">Vehicle docks · door opens<br>Parcel ready for unloading</div></div><div class="dp-step-tick">✅</div></div>
+          <div class="dp-step" id="ds1"><div class="dp-step-ico">⚙️</div><div class="dp-step-body"><div class="dp-step-name">Conveyor Activated</div><div class="dp-step-detail">Belt starts · parcel moves<br>toward camera zone</div></div><div class="dp-step-tick">✅</div></div>
+          <div class="dp-step" id="ds2"><div class="dp-step-ico">🛡️</div><div class="dp-step-body"><div class="dp-step-name">Privacy Filter</div><div class="dp-step-detail">Faces & plates anonymised<br>GDPR / CCPA compliant</div></div><div class="dp-step-tick">✅</div></div>
+          <div class="dp-step" id="ds3"><div class="dp-step-ico">📷</div><div class="dp-step-body"><div class="dp-step-name">Camera Capture</div><div class="dp-step-detail">4× angles · HDR · IR assist<br>30fps continuous</div></div><div class="dp-step-tick">✅</div></div>
+          <div class="dp-step" id="ds4"><div class="dp-step-ico">🧠</div><div class="dp-step-body"><div class="dp-step-name">AI Vision Analysis</div><div class="dp-step-detail">Shape, texture & colour read<br>Visual fingerprint created</div></div><div class="dp-step-tick">✅</div></div>
+          <div class="dp-step" id="ds5"><div class="dp-step-ico">🔍</div><div class="dp-step-body"><div class="dp-step-name">Identity Matched</div><div class="dp-step-detail">Parcel ID confirmed<br>Confidence: 98.7%</div></div><div class="dp-step-tick">✅</div></div>
+          <div class="dp-step" id="ds6"><div class="dp-step-ico">🗺️</div><div class="dp-step-body"><div class="dp-step-name">Routing Decision</div><div class="dp-step-detail">Destination: Zone A<br>Local rule applied</div></div><div class="dp-step-tick">✅</div></div>
+          <div class="dp-step" id="ds7"><div class="dp-step-ico">☁️</div><div class="dp-step-body"><div class="dp-step-name">Cloud Sync</div><div class="dp-step-detail">Record updated remotely<br>All hubs notified</div></div><div class="dp-step-tick">✅</div></div>
+          <div class="dp-step" id="ds8"><div class="dp-step-ico">✅</div><div class="dp-step-body"><div class="dp-step-name">Sorted & Dispatched</div><div class="dp-step-detail">Parcel in Zone A · &lt;500ms<br>Zero manual handling</div></div><div class="dp-step-tick">✅</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ③ BUSINESS FLOW ══════════════════════════════ -->
+<div class="panel" id="tab2">
+  <div class="bf-wrap">
+    <div class="bf-title-block">
+      <div class="bf-eyebrow">End-to-End Flow</div>
+      <h2>How a Parcel Moves Through the System</h2>
+      <p>A plain-English walkthrough of every stage — from the truck arriving at the dock to the parcel landing in the right outbound chute.</p>
+    </div>
+
+    <div class="phases">
+
+      <div class="phase">
+        <div class="phase-header">
+          <span class="phase-num ph1">Phase 1</span>
+          <span class="phase-title">Physical Capture</span>
+          <span class="phase-subtitle">Truck → Belt → Camera</span>
+        </div>
+        <div class="phase-nodes">
+          <div class="p-node">
+            <div class="p-node-type" style="color:var(--cyan);">🚛 Entry</div>
+            <div class="p-node-title">Truck Arrives at Hub</div>
+            <div class="p-node-desc">Delivery vehicle pulls into docking bay. Parcel unloaded and placed on intake belt.</div>
+          </div>
+          <div class="p-arrow"><div class="p-arrow-line"></div></div>
+          <div class="p-node">
+            <div class="p-node-type" style="color:var(--cyan);">⚙️ Transport</div>
+            <div class="p-node-title">Intake Conveyor Belt</div>
+            <div class="p-node-desc">Speed-controlled belt transports parcel. Separation enforced between items.</div>
+          </div>
+          <div class="p-arrow"><div class="p-arrow-line"></div></div>
+          <div class="p-node">
+            <div class="p-node-type" style="color:var(--amber);">📷 Capture</div>
+            <div class="p-node-title">Multi-Angle Camera Capture</div>
+            <div class="p-node-desc">4 cameras fire simultaneously — top and 3 sides — as the parcel passes through. No stopping.</div>
+          </div>
+          <div class="p-arrow"><div class="p-arrow-line"></div></div>
+          <div class="p-node">
+            <div class="p-node-type" style="color:var(--purple);">🛡️ Compliance</div>
+            <div class="p-node-title">Privacy Filter</div>
+            <div class="p-node-desc">Faces and licence plates automatically masked before any data is stored. GDPR & CCPA compliant.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-header">
+          <span class="phase-num ph2">Phase 2</span>
+          <span class="phase-title">AI Analysis</span>
+          <span class="phase-subtitle">Visual Fingerprinting in &lt;50ms</span>
+        </div>
+        <div class="phase-nodes">
+          <div class="p-node">
+            <div class="p-node-type" style="color:var(--amber);">🧠 AI Engine</div>
+            <div class="p-node-title">Image Ingestion & Preprocessing</div>
+            <div class="p-node-desc">Raw images normalised and queued into the AI pipeline in real time.</div>
+          </div>
+          <div class="p-arrow"><div class="p-arrow-line"></div></div>
+          <div class="p-node">
+            <div class="p-node-type" style="color:var(--amber);">🔬 Features</div>
+            <div class="p-node-title">AI Vision Analysis</div>
+            <div class="p-node-desc">Shape, texture, colour and damage patterns extracted. A 768-dimension visual fingerprint is created in &lt;50ms.</div>
+          </div>
+          <div class="p-arrow"><div class="p-arrow-line"></div></div>
+          <div class="p-node">
+            <div class="p-node-type" style="color:var(--amber);">📊 Score</div>
+            <div class="p-node-title">Confidence Scoring</div>
+            <div class="p-node-desc">Similarity measured against known profiles. Anything below threshold is flagged for review.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-header">
+          <span class="phase-num ph3">Phase 3</span>
+          <span class="phase-title">Identity Decision</span>
+          <span class="phase-subtitle">Match, Create, or Fallback</span>
+        </div>
+        <div class="phase-nodes">
+          <div class="p-node">
+            <div class="p-node-type" style="color:var(--purple);">🔍 Lookup</div>
+            <div class="p-node-title">Identity Resolution</div>
+            <div class="p-node-desc">Visual fingerprint searched against the identity database in under 10ms.</div>
+          </div>
+        </div>
+        <div class="bf-fork">
+          <div class="bf-fork-lbl">Outcome</div>
+          <div class="bf-fork-card">
+            <div class="df-pill pgreen">✓ Match Found</div>
+            <div class="bf-fc-head">Existing Parcel Recognised</div>
+            <p class="bf-fc-body">Confidence ≥ 87%. Record linked, history updated, 'Identified' event logged. Existing ID returned.</p>
+          </div>
+          <div class="bf-fork-card">
+            <div class="df-pill pblue">+ No Match</div>
+            <div class="bf-fc-head">New Parcel Created</div>
+            <p class="bf-fc-body">No vector match found. New parcel ID generated instantly. 'New Identity' event logged.</p>
+          </div>
+          <div class="bf-fork-card">
+            <div class="df-pill pamber">⚡ DB Offline</div>
+            <div class="bf-fc-head">Fallback Mode Active</div>
+            <p class="bf-fc-body">Database unreachable. System treats parcel as new temporarily. Reconciliation happens automatically on reconnect.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-header">
+          <span class="phase-num ph4">Phase 4</span>
+          <span class="phase-title">Routing & Dispatch</span>
+          <span class="phase-subtitle">Local Rules → Cloud Escalation</span>
+        </div>
+        <div class="phase-nodes">
+          <div class="p-node">
+            <div class="p-node-type" style="color:var(--cyan);">📝 Update</div>
+            <div class="p-node-title">Update Parcel Record</div>
+            <div class="p-node-desc">Current location, timestamp, and status added to the parcel's history chain.</div>
+          </div>
+          <div class="p-arrow"><div class="p-arrow-line"></div></div>
+          <div class="p-node">
+            <div class="p-node-type" style="color:var(--cyan);">🗺️ Route</div>
+            <div class="p-node-title">Routing Decision</div>
+            <div class="p-node-desc">Local rules applied first. If no rule found, cloud routing engine consulted for complex decisions.</div>
+          </div>
+          <div class="p-arrow"><div class="p-arrow-line"></div></div>
+          <div class="p-node">
+            <div class="p-node-type" style="color:var(--cyan);">☁️ Sync</div>
+            <div class="p-node-title">Cloud Synchronisation</div>
+            <div class="p-node-desc">Record uploaded to cloud. All hubs globally updated. Offline sites queue data until reconnected.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-header">
+          <span class="phase-num ph5">Phase 5</span>
+          <span class="phase-title">Physical Dispatch</span>
+          <span class="phase-subtitle">Parcel Sorted in &lt;200ms Total</span>
+        </div>
+        <div class="phase-nodes">
+          <div class="p-node">
+            <div class="p-node-type" style="color:var(--green);">📦 Command</div>
+            <div class="p-node-title">Sorting Instruction Issued</div>
+            <div class="p-node-desc">Diverter gate commanded within 200ms of initial camera capture. No stopping, no delays.</div>
+          </div>
+          <div class="p-arrow"><div class="p-arrow-line"></div></div>
+          <div class="p-node">
+            <div class="p-node-type" style="color:var(--green);">⚙️ Physical</div>
+            <div class="p-node-title">Diverter Gate Activates</div>
+            <div class="p-node-desc">Pneumatic or belt diverter switches the parcel onto the correct outbound chute — Zones A through F.</div>
+          </div>
+          <div class="p-arrow"><div class="p-arrow-line"></div></div>
+          <div class="p-node">
+            <div class="p-node-type" style="color:var(--green);">✅ Complete</div>
+            <div class="p-node-title">Parcel Sorted & Dispatched</div>
+            <div class="p-node-desc">Parcel lands in correct outbound area. Operator dashboard updated. Zero manual handling.</div>
+          </div>
+          <div class="p-arrow"><div class="p-arrow-line"></div></div>
+          <div class="p-node">
+            <div class="p-node-type" style="color:var(--cyan);">🖥️ Monitor</div>
+            <div class="p-node-title">Operator Dashboard</div>
+            <div class="p-node-desc">Real-time traffic light health status, throughput metrics, and alerts — visible to operators globally.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ④ TECHNICAL DETAIL ══════════════════════════════ -->
+<div class="panel" id="tab3">
+  <div class="tf-wrap">
+    <div class="bf-title-block">
+      <div class="bf-eyebrow">Engineering Reference</div>
+      <h2>Technical System Architecture</h2>
+      <p>Component-level breakdown for engineering, due diligence, and technical stakeholders.</p>
+    </div>
+
+    <div class="tf-metrics">
+      <div class="tf-metric"><div class="tf-m-val">&lt;500ms</div><div class="tf-m-lbl">E2E Latency</div></div>
+      <div class="tf-metric"><div class="tf-m-val g">99.4%</div><div class="tf-m-lbl">ID Accuracy</div></div>
+      <div class="tf-metric"><div class="tf-m-val">0.85</div><div class="tf-m-lbl">Match Threshold</div></div>
+      <div class="tf-metric"><div class="tf-m-val a">72h</div><div class="tf-m-lbl">Image Cache TTL</div></div>
+      <div class="tf-metric"><div class="tf-m-val">4×</div><div class="tf-m-lbl">Camera Angles</div></div>
+      <div class="tf-metric"><div class="tf-m-val">768-D</div><div class="tf-m-lbl">Embedding Vector</div></div>
+      <div class="tf-metric"><div class="tf-m-val g">A–F</div><div class="tf-m-lbl">Sort Zones</div></div>
+    </div>
+
+    <div class="tf-grid" style="margin-top:24px;">
+
+      <div class="tf-card">
+        <div class="tf-badge tf-b-cyan">F-01 · Camera Array</div>
+        <div class="tf-card-title">Multi-Angle Image Capture</div>
+        <p class="tf-card-desc">Four HDR cameras fire simultaneously as the parcel passes. No stopping required — continuous flow capture.</p>
+        <div class="tf-specs">
+          <div class="tf-spec"><b>Cameras:</b> 4× (top + 3 sides)</div>
+          <div class="tf-spec"><b>Frame Rate:</b> 30fps · HDR</div>
+          <div class="tf-spec"><b>Assist:</b> Infrared low-light</div>
+          <div class="tf-spec"><b>Trigger:</b> Dock sensor → belt</div>
+        </div>
+      </div>
+
+      <div class="tf-card">
+        <div class="tf-badge tf-b-purple">F-02 · Privacy Layer</div>
+        <div class="tf-card-title">Anonymisation & Compliance</div>
+        <p class="tf-card-desc">Automated masking applied before any image enters storage or processing pipelines.</p>
+        <div class="tf-specs">
+          <div class="tf-spec"><b>Masks:</b> Faces, licence plates</div>
+          <div class="tf-spec"><b>Standards:</b> GDPR, CCPA</div>
+          <div class="tf-spec"><b>Log:</b> Compliance event per parcel</div>
+          <div class="tf-spec"><b>Mode:</b> Configurable on/off</div>
+        </div>
+      </div>
+
+      <div class="tf-card">
+        <div class="tf-badge tf-b-amber">F-03 · AI Vision</div>
+        <div class="tf-card-title">Feature Extraction Engine</div>
+        <p class="tf-card-desc">CNN model extracts a 768-dimensional visual fingerprint from each parcel image in under 50ms.</p>
+        <div class="tf-specs">
+          <div class="tf-spec"><b>Architecture:</b> CNN (custom)</div>
+          <div class="tf-spec"><b>Output:</b> 768-dim embedding</div>
+          <div class="tf-spec"><b>Features:</b> Shape, texture, colour</div>
+          <div class="tf-spec"><b>Latency:</b> &lt;50ms per parcel</div>
+        </div>
+      </div>
+
+      <div class="tf-card">
+        <div class="tf-badge tf-b-cyan">F-04 · Identity DB</div>
+        <div class="tf-card-title">Vector Identity Resolution</div>
+        <p class="tf-card-desc">Approximate Nearest Neighbour search matches embeddings against the parcel identity store in under 10ms.</p>
+        <div class="tf-specs">
+          <div class="tf-spec"><b>Search:</b> ANN · cosine similarity</div>
+          <div class="tf-spec"><b>Threshold:</b> 0.85 confidence</div>
+          <div class="tf-spec"><b>Latency:</b> &lt;10ms lookup</div>
+          <div class="tf-spec"><b>Store:</b> Local + cloud replicated</div>
+        </div>
+      </div>
+
+      <div class="tf-card">
+        <div class="tf-badge tf-b-cyan">F-05 · Routing Engine</div>
+        <div class="tf-card-title">Smart Routing Decision</div>
+        <p class="tf-card-desc">Local rule evaluation first; cloud escalation for complex multi-hub routing. Default fallback always available.</p>
+        <div class="tf-specs">
+          <div class="tf-spec"><b>Priority:</b> Local rules first</div>
+          <div class="tf-spec"><b>Escalation:</b> Cloud engine</div>
+          <div class="tf-spec"><b>Timeout:</b> Default local sort</div>
+          <div class="tf-spec"><b>Zones:</b> A–F configurable</div>
+        </div>
+      </div>
+
+      <div class="tf-card">
+        <div class="tf-badge tf-b-green">F-06 · Dispatch</div>
+        <div class="tf-card-title">Physical Sort Execution</div>
+        <p class="tf-card-desc">Diverter gate commanded within 200ms of camera capture. Pneumatic or belt diversion to correct chute.</p>
+        <div class="tf-specs">
+          <div class="tf-spec"><b>Command:</b> &lt;200ms end-to-end</div>
+          <div class="tf-spec"><b>Divert:</b> Pneumatic / belt</div>
+          <div class="tf-spec"><b>Chutes:</b> Up to 6 zones (A–F)</div>
+          <div class="tf-spec"><b>Accuracy:</b> 99.4% sort rate</div>
+        </div>
+      </div>
+
+      <div class="tf-card">
+        <div class="tf-badge tf-b-cyan">F-07 · Cloud Sync</div>
+        <div class="tf-card-title">Cloud Synchronisation</div>
+        <p class="tf-card-desc">Event data batched and uploaded. Offline sites queue locally and reconcile automatically on reconnect.</p>
+        <div class="tf-specs">
+          <div class="tf-spec"><b>Mode:</b> Batch · retry on fail</div>
+          <div class="tf-spec"><b>Offline:</b> Local queue → auto sync</div>
+          <div class="tf-spec"><b>Image Cache:</b> 72h TTL local</div>
+          <div class="tf-spec"><b>Protocol:</b> Configurable endpoint</div>
+        </div>
+      </div>
+
+      <div class="tf-card">
+        <div class="tf-badge tf-b-muted">F-08 · Archival</div>
+        <div class="tf-card-title">Image Archival & Storage</div>
+        <p class="tf-card-desc">Images stored to local NVMe cache. Storage failure is non-blocking — processing continues with a logged warning.</p>
+        <div class="tf-specs">
+          <div class="tf-spec"><b>Storage:</b> Local NVMe cache</div>
+          <div class="tf-spec"><b>TTL:</b> 72 hours</div>
+          <div class="tf-spec"><b>On failure:</b> Skip + warn log</div>
+          <div class="tf-spec"><b>Design:</b> Non-blocking</div>
+        </div>
+      </div>
+
+      <div class="tf-card">
+        <div class="tf-badge tf-b-muted">F-09 · Dashboard</div>
+        <div class="tf-card-title">Operational Health Monitor</div>
+        <p class="tf-card-desc">Real-time traffic light status polled from all services. Green/Yellow/Red visibility for operators before each shift.</p>
+        <div class="tf-specs">
+          <div class="tf-spec"><b>Status:</b> Green / Yellow / Red</div>
+          <div class="tf-spec"><b>Poll:</b> Service health check</div>
+          <div class="tf-spec"><b>Alerts:</b> Low confidence, offline</div>
+          <div class="tf-spec"><b>Access:</b> Operator dashboard</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Fallback Flows -->
+    <div class="tf-fallbacks">
+      <div class="tf-fb-header">Resilience & Fallback Flows</div>
+      <div class="tf-fb-grid">
+        <div class="tf-fb-card">
+          <div class="tf-fb-scenario">⚡ Storage Offline</div>
+          <div class="tf-fb-title">Image Archival Resilience</div>
+          <p class="tf-fb-body">Local storage unreachable → archival step skipped → warning logged → processing continues uninterrupted. Data loss accepted for uptime.</p>
+        </div>
+        <div class="tf-fb-card">
+          <div class="tf-fb-scenario">⚡ Identity DB Offline</div>
+          <div class="tf-fb-title">Identity Fallback Mode</div>
+          <p class="tf-fb-body">Database unreachable → system defaults to treating all parcels as new → temporary profiles created → reconciliation on reconnect.</p>
+        </div>
+        <div class="tf-fb-card">
+          <div class="tf-fb-scenario">⚡ No Cloud Connection</div>
+          <div class="tf-fb-title">Offline-First Operation</div>
+          <p class="tf-fb-body">No cloud endpoint configured → offline mode activated → all data marked local-only → zero external traffic → full local operation.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tf-legend">
+      <div class="tf-leg-item"><div class="tf-leg-dot" style="background:var(--cyan);"></div>Capture / Identity / Routing</div>
+      <div class="tf-leg-item"><div class="tf-leg-dot" style="background:var(--amber);"></div>AI Analysis</div>
+      <div class="tf-leg-item"><div class="tf-leg-dot" style="background:var(--green);"></div>Output / Success</div>
+      <div class="tf-leg-item"><div class="tf-leg-dot" style="background:var(--red);"></div>Resilience / Fallback</div>
+      <div class="tf-leg-item"><div class="tf-leg-dot" style="background:var(--purple);"></div>Privacy / Compliance</div>
+      <div style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">LLS-ARCH-001 · EDGE PRODUCT MGMT · 2026</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /panels -->
+
+<!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════ -->
+<script>
+/* ── TAB SWITCHING ── */
+const tabs = document.querySelectorAll('.tab');
+const panels = document.querySelectorAll('.panel');
+function switchTab(i) {
+  tabs.forEach((t,idx) => t.classList.toggle('active', idx===i));
+  panels.forEach((p,idx) => p.classList.toggle('active', idx===i));
+}
+
+/* ── GLOBAL COUNTER ── */
+let gCount = 0;
+function bumpCounter() {
+  gCount++;
+  document.getElementById('gCounter').textContent = gCount;
+}
+
+/* ── DEMO SIMULATION ── */
+let dRunning = false;
+let dTimers = [];
+function dT(fn, ms) { const id = setTimeout(fn, ms); dTimers.push(id); }
+
+function setDS(i, state) {
+  const el = document.getElementById('ds'+i);
+  el.classList.remove('active','done');
+  if (state) { el.classList.add(state); el.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+}
+function setDNarr(html) { document.getElementById('dNarrText').innerHTML = html; }
+function setDProg(p) { document.getElementById('dProgress').style.width = p+'%'; }
+function setDLatency(v) { document.getElementById('gLatency').textContent = v; }
+
+function demoStart() {
+  if (dRunning) return;
+  dRunning = true;
+  document.getElementById('dStartBtn').disabled = true;
+  document.getElementById('dStartBtn').textContent = '● Running…';
+
+  // Step 0
+  setDS(0,'active'); setDProg(5);
+  setDNarr('🚛 Delivery truck approaching the sorting hub…');
+  document.getElementById('dTruck').classList.add('arrived');
+
+  dT(() => {
+    document.getElementById('dDock').classList.add('open');
+    ['dw1','dw2','dw3'].forEach((id,i) => setTimeout(()=>document.getElementById(id).classList.add('lit'),i*150));
+    setDNarr('🚛 Dock door opens. Truck <span class="hl">secured</span> at the bay.');
+  }, 1800);
+
+  // Step 1
+  dT(() => {
+    setDS(0,'done'); setDS(1,'active'); setDProg(15);
+    setDNarr('⚙️ Intake conveyor <span class="hl">activates</span>. Parcel moving toward scan zone.');
+    document.getElementById('dConveyor').classList.add('running');
+    const sR = document.getElementById('dScene').getBoundingClientRect();
+    const cR = document.getElementById('dConveyor').getBoundingClientRect();
+    const p = document.getElementById('dParcel');
+    p.style.left = (cR.left - sR.left + 20)+'px';
+    p.style.top  = (cR.top  - sR.top  + 7)+'px';
+    p.style.transition = 'none';
+    p.classList.add('vis');
+  }, 3000);
+
+  // Step 2
+  dT(() => {
+    setDS(1,'done'); setDS(2,'active'); setDProg(25);
+    setDNarr('🛡️ <span class="hl">Privacy filter engaged.</span> Faces and plates automatically anonymised. GDPR compliant.');
+    const sR = document.getElementById('dScene').getBoundingClientRect();
+    const cR = document.getElementById('dConveyor').getBoundingClientRect();
+    const p = document.getElementById('dParcel');
+    p.style.transition = 'left 1.2s ease, top 1.2s ease';
+    p.style.left = (cR.left - sR.left + cR.width * .35)+'px';
+    p.style.top  = (cR.top  - sR.top  + 7)+'px';
+  }, 5000);
+
+  // Step 3
+  dT(() => {
+    setDS(2,'done'); setDS(3,'active'); setDProg(38);
+    setDNarr('📷 Parcel passes under <span class="hl">4 cameras</span>. Every angle captured simultaneously.');
+    const sR = document.getElementById('dScene').getBoundingClientRect();
+    const cR = document.getElementById('dConveyor').getBoundingClientRect();
+    const p = document.getElementById('dParcel');
+    p.style.transition = 'left .8s ease, top .8s ease';
+    p.style.left = (cR.left - sR.left + cR.width * .5 - 13)+'px';
+    p.style.top  = (cR.top  - sR.top  + 7)+'px';
+    setTimeout(() => {
+      document.getElementById('dCamHead').classList.add('scanning');
+      p.classList.add('scanned');
+      setDLatency('48ms');
+    }, 900);
+  }, 7000);
+
+  // Step 4
+  dT(() => {
+    setDS(3,'done'); setDS(4,'active'); setDProg(52);
+    setDNarr('🧠 <span class="hl">AI Vision Engine</span> reading visual fingerprint — shape, texture, colour pattern.');
+    document.getElementById('dCamHead').classList.remove('scanning');
+    const ap = document.getElementById('dAiPanel');
+    ap.classList.add('active');
+    const vals = [92,87,78,98];
+    ['db1','db2','db3','db4'].forEach((id,i) => {
+      const b = document.getElementById(id);
+      b.style.transition = 'none'; b.style.width = '0%';
+      setTimeout(()=>{ b.style.transition='width .55s ease '+(i*.15)+'s'; b.style.width=vals[i]+'%'; },50);
+    });
+  }, 10000);
+
+  // Step 5
+  dT(() => {
+    setDS(4,'done'); setDS(5,'active'); setDProg(65);
+    setDNarr('🔍 Identity <span class="hl">confirmed at 98.7%</span> confidence. Profile matched and updated.');
+    const sR = document.getElementById('dScene').getBoundingClientRect();
+    const cR = document.getElementById('dConveyor').getBoundingClientRect();
+    const popup = document.getElementById('dIdPopup');
+    popup.style.left = (cR.left - sR.left + cR.width * .35)+'px';
+    popup.style.top  = (cR.top  - sR.top  - 52)+'px';
+    popup.classList.add('show');
+  }, 12500);
+
+  // Step 6
+  dT(() => {
+    setDS(5,'done'); setDS(6,'active'); setDProg(76);
+    setDNarr('🗺️ <span class="hl">Routing decision</span>: Zone A. Local rule applied — cloud not needed.');
+    document.getElementById('dIdPopup').classList.remove('show');
+    document.getElementById('dAiPanel').classList.remove('active');
+    const sR = document.getElementById('dScene').getBoundingClientRect();
+    const cR = document.getElementById('dConveyor').getBoundingClientRect();
+    const p = document.getElementById('dParcel');
+    p.style.transition = 'left 1s ease, top 1s ease';
+    p.style.left = (cR.right - sR.left - 52)+'px';
+    p.style.top  = (cR.top   - sR.top  + 7)+'px';
+  }, 14500);
+
+  // Step 7
+  dT(() => {
+    setDS(6,'done'); setDS(7,'active'); setDProg(87);
+    setDNarr('☁️ Data synced to <span class="hl">cloud in real time</span>. All hubs updated. Dashboard notified.');
+    document.getElementById('dcA').classList.add('active');
+    document.getElementById('dParcel').classList.add('routed');
+    // Cloud signal
+    const sR = document.getElementById('dScene').getBoundingClientRect();
+    const hR = document.getElementById('dHub').getBoundingClientRect();
+    const sx = hR.right - sR.left - 80, sy = hR.top - sR.top + 40;
+    const ex = sR.width * .78, ey = 32;
+    document.getElementById('dCloudLine').setAttribute('d',`M${sx} ${sy} Q${(sx+ex)/2} ${sy-55} ${ex} ${ey}`);
+    document.getElementById('dCloudLine').style.opacity='1';
+    document.getElementById('dCloudIcon').setAttribute('x',ex);
+    document.getElementById('dCloudIcon').setAttribute('y',ey);
+    document.getElementById('dCloudIcon').style.opacity='1';
+  }, 16500);
+
+  // Step 8
+  dT(() => {
+    setDS(7,'done'); setDS(8,'active'); setDProg(100);
+    document.getElementById('dCloudLine').style.opacity='0';
+    document.getElementById('dCloudIcon').style.opacity='0';
+    setDLatency('<200ms');
+    setDNarr('✅ <span class="hl">Parcel sorted and dispatched</span> to Zone A. Under 200ms. No label. No manual handling.');
+    const sR = document.getElementById('dScene').getBoundingClientRect();
+    const cR = document.getElementById('dcA').getBoundingClientRect();
+    const p = document.getElementById('dParcel');
+    p.style.transition='left .6s ease, top .6s ease';
+    p.style.left=(cR.left-sR.left+28)+'px';
+    p.style.top =(cR.top -sR.top +3)+'px';
+    bumpCounter();
+    setTimeout(()=>{
+      setDS(8,'done');
+      p.classList.remove('vis');
+      document.getElementById('dStartBtn').disabled=false;
+      document.getElementById('dStartBtn').textContent='▶ Run Again';
+      dRunning=false;
+    },1600);
+  }, 19000);
+}
+
+function demoReset() {
+  dTimers.forEach(clearTimeout); dTimers=[];
+  dRunning=false;
+  document.getElementById('dTruck').classList.remove('arrived');
+  document.getElementById('dDock').classList.remove('open');
+  document.getElementById('dConveyor').classList.remove('running');
+  document.getElementById('dCamHead').classList.remove('scanning');
+  document.getElementById('dAiPanel').classList.remove('active');
+  ['db1','db2','db3','db4'].forEach(id=>{const b=document.getElementById(id);b.style.transition='none';b.style.width='0%';});
+  const p=document.getElementById('dParcel');
+  p.classList.remove('vis','scanned','routed');
+  document.getElementById('dIdPopup').classList.remove('show');
+  document.getElementById('dCloudLine').style.opacity='0';
+  document.getElementById('dCloudIcon').style.opacity='0';
+  ['dcA','dcB','dcC'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  ['dw1','dw2','dw3'].forEach(id=>document.getElementById(id).classList.remove('lit'));
+  setDProg(0); setDLatency('—');
+  for(let i=0;i<=8;i++) setDS(i,'');
+  setDNarr('Press <span class="hl">Start Simulation</span> to watch a parcel travel through the complete label-less sorting system.');
+  document.getElementById('dStartBtn').disabled=false;
+  document.getElementById('dStartBtn').textContent='▶ Start Simulation';
+}
+</script>
+</body>
+</html>

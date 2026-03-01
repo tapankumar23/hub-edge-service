@@ -1,0 +1,573 @@
+openapi: "3.0.3"
+info:
+  title: Edge Hub Service API
+  version: "1.0.0"
+  description: |
+    REST API contracts for all Edge Hub microservices.
+    All services run on the edge host within a Docker Compose network.
+    In production, bearer token authentication is required (see securitySchemes).
+  contact:
+    name: Edge Platform Engineering
+    email: edge-platform@example.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost
+    description: Local development (Docker Compose)
+  - url: https://edge.{facility_id}.example.com
+    description: Production edge host
+    variables:
+      facility_id:
+        description: Facility identifier (e.g., hub-001)
+        default: hub-001
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: ingestion
+    description: Camera ingestion service (port 8081)
+  - name: inference
+    description: ML inference service (port 8082)
+  - name: identity
+    description: Parcel identity resolution (port 8083)
+  - name: sync
+    description: Cloud sync outbox service (port 8084)
+  - name: routing
+    description: Parcel routing decisions (port 8085)
+  - name: monitoring
+    description: Observability and metrics (port 8086)
+
+paths:
+
+  # ─── Camera Ingestion (8081) ───────────────────────────────────────────────
+
+  /8081/health:
+    get:
+      tags: [ingestion]
+      summary: Ingestion service liveness check
+      security: []
+      responses:
+        "200":
+          description: Service is alive
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: ok
+
+  /8081/ingest:
+    post:
+      tags: [ingestion]
+      summary: Submit an image frame for processing
+      description: |
+        Accepts a base64-encoded image, wraps it in a FrameEvent, and publishes
+        it to the Kafka `frames` topic. Returns 202 immediately; processing is async.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestRequest"
+            example:
+              camera_id: cam-01
+              image_base64: "/9j/4AAQSkZJRgAB..."
+      responses:
+        "202":
+          description: Frame queued for processing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptedResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  # ─── Inference (8082) ─────────────────────────────────────────────────────
+
+  /8082/health:
+    get:
+      tags: [inference]
+      summary: Inference service liveness check
+      security: []
+      responses:
+        "200":
+          description: Service is alive
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: ok
+
+  /8082/infer:
+    post:
+      tags: [inference]
+      summary: Run inference directly on an image
+      description: |
+        Accepts either `image_base64` or `object_key` (MinIO). Runs YOLO detection
+        and embedding. Returns a full InferenceResult synchronously.
+        Use this for testing; in production, inference is triggered by Kafka consumer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InferRequest"
+      responses:
+        "200":
+          description: Inference result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  # ─── Identity (8083) ──────────────────────────────────────────────────────
+
+  /8083/health:
+    get:
+      tags: [identity]
+      summary: Identity service liveness check
+      security: []
+      responses:
+        "200":
+          description: Service is alive
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: ok
+
+  /8083/identify:
+    post:
+      tags: [identity]
+      summary: Resolve parcel identity from an InferenceResult
+      description: |
+        Performs nearest-neighbor search in Qdrant. Returns the matched or newly
+        assigned edge_parcel_id. In production, this is triggered by Kafka consumer;
+        this endpoint supports direct testing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentifyRequest"
+      responses:
+        "200":
+          description: Identity resolution result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentifyResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  # ─── Sync (8084) ──────────────────────────────────────────────────────────
+
+  /8084/health:
+    get:
+      tags: [sync]
+      summary: Sync service liveness check
+      security: []
+      responses:
+        "200":
+          description: Service is alive
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: ok
+
+  /8084/sync/status:
+    get:
+      tags: [sync]
+      summary: Get sync outbox queue status
+      responses:
+        "200":
+          description: Current outbox queue depth
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncStatus"
+
+  # ─── Routing (8085) ───────────────────────────────────────────────────────
+
+  /8085/health:
+    get:
+      tags: [routing]
+      summary: Routing service liveness check
+      security: []
+      responses:
+        "200":
+          description: Service is alive
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: ok
+
+  /8085/route:
+    post:
+      tags: [routing]
+      summary: Get routing decision for a parcel
+      description: |
+        Returns a destination for the given parcel. Decision priority:
+        1. Local rule (routing_rules table)
+        2. Cloud routing API (ROUTING_API_URL, 2 s timeout)
+        3. LOCAL_DEFAULT fallback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RouteRequest"
+      responses:
+        "200":
+          description: Routing decision
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RouteResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /8085/route/rules:
+    post:
+      tags: [routing]
+      summary: Create or update a per-parcel routing rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RouteRuleRequest"
+      responses:
+        "200":
+          description: Rule persisted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  # ─── Monitoring (8086) ────────────────────────────────────────────────────
+
+  /8086/health:
+    get:
+      tags: [monitoring]
+      summary: Monitoring service liveness check
+      security: []
+      responses:
+        "200":
+          description: Service is alive
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: ok
+
+  /8086/metrics:
+    get:
+      tags: [monitoring]
+      summary: Prometheus metrics endpoint
+      security: []
+      responses:
+        "200":
+          description: Prometheus text format metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT bearer token. Required in production; optional in local dev.
+        Obtain from the identity provider configured for your facility.
+
+  schemas:
+
+    IngestRequest:
+      type: object
+      required: [image_base64]
+      properties:
+        camera_id:
+          type: string
+          nullable: true
+          description: Identifier of the originating camera. Falls back to CAMERA_ID env if omitted.
+          example: cam-01
+        image_base64:
+          type: string
+          minLength: 1
+          description: Base64-encoded image (JPEG or PNG). Maximum 10 MB decoded.
+          example: "/9j/4AAQSkZJRgAB..."
+
+    AcceptedResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: queued
+
+    InferRequest:
+      type: object
+      properties:
+        image_base64:
+          type: string
+          nullable: true
+          description: Base64-encoded image. Either this or object_key must be provided.
+        object_key:
+          type: string
+          nullable: true
+          description: MinIO object key to load image from. Either this or image_base64 must be provided.
+        camera_id:
+          type: string
+          nullable: true
+          description: Camera identifier to include in result.
+
+    InferenceResult:
+      type: object
+      required: [camera_id, timestamp, detections, fingerprint, image_object_key]
+      properties:
+        camera_id:
+          type: string
+          description: Originating camera identifier.
+          example: cam-01
+        timestamp:
+          type: integer
+          format: int64
+          description: Unix timestamp in milliseconds when the frame was captured.
+          example: 1740873600000
+        detections:
+          type: array
+          description: YOLO detection results. Empty array if no objects detected.
+          items:
+            $ref: "#/components/schemas/Detection"
+        fingerprint:
+          type: array
+          description: 768-dimensional embedding vector. Zero vector if no detections.
+          items:
+            type: number
+            format: float
+          minItems: 768
+          maxItems: 768
+        image_object_key:
+          type: string
+          description: MinIO object key where the image was stored. Empty string if MinIO unavailable.
+          example: capture/550e8400-e29b-41d4-a716-446655440000.jpg
+
+    Detection:
+      type: object
+      required: [x1, y1, x2, y2, score, label]
+      properties:
+        x1:
+          type: number
+          format: float
+          description: Left bounding box coordinate (pixels).
+        y1:
+          type: number
+          format: float
+          description: Top bounding box coordinate (pixels).
+        x2:
+          type: number
+          format: float
+          description: Right bounding box coordinate (pixels).
+        y2:
+          type: number
+          format: float
+          description: Bottom bounding box coordinate (pixels).
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Detection confidence score.
+        label:
+          type: string
+          description: Detected object class label.
+          example: parcel
+
+    IdentifyRequest:
+      type: object
+      required: [inference]
+      properties:
+        inference:
+          $ref: "#/components/schemas/InferenceResult"
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Arbitrary metadata to encrypt and store alongside the parcel.
+
+    IdentifyResponse:
+      type: object
+      required: [edge_parcel_id, match_score, qdrant_point_id]
+      properties:
+        edge_parcel_id:
+          type: string
+          format: uuid
+          description: Stable parcel identifier (new or matched).
+          example: 550e8400-e29b-41d4-a716-446655440000
+        match_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Cosine similarity score. 0 if no match found (new identity).
+          example: 0.94
+        qdrant_point_id:
+          type: string
+          description: Qdrant point ID of the matched or newly inserted vector.
+          example: 550e8400-e29b-41d4-a716-446655440001
+        is_new:
+          type: boolean
+          description: True if a new identity was created; false if an existing one was matched.
+
+    SyncStatus:
+      type: object
+      required: [pending]
+      properties:
+        pending:
+          type: integer
+          minimum: 0
+          description: Number of sync_outbox items awaiting cloud delivery.
+          example: 3
+        sent_last_hour:
+          type: integer
+          minimum: 0
+          description: Number of items successfully sent in the last 60 minutes.
+          example: 47
+
+    RouteRequest:
+      type: object
+      required: [edge_parcel_id]
+      properties:
+        edge_parcel_id:
+          type: string
+          format: uuid
+          description: Parcel to route.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Optional context passed to cloud routing API if consulted.
+
+    RouteResponse:
+      type: object
+      required: [destination, source]
+      properties:
+        destination:
+          type: string
+          description: Target destination for the parcel.
+          example: dock-A
+        source:
+          type: string
+          enum: [local-rule, cloud, local-default]
+          description: |
+            Decision origin:
+            - local-rule: matched a routing_rules entry
+            - cloud: returned by ROUTING_API_URL
+            - local-default: fallback to LOCAL_DEFAULT env
+          example: local-rule
+
+    RouteRuleRequest:
+      type: object
+      required: [edge_parcel_id, destination]
+      properties:
+        edge_parcel_id:
+          type: string
+          format: uuid
+          description: Parcel to apply this rule to.
+        destination:
+          type: string
+          description: Destination to assign.
+          example: dock-B
+        enabled:
+          type: boolean
+          default: true
+          description: Whether this rule is active.
+
+    OkResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Human-readable error description.
+          example: image_base64 is required
+        code:
+          type: string
+          description: Machine-readable error code.
+          example: VALIDATION_ERROR
+        trace_id:
+          type: string
+          description: Distributed trace ID for log correlation.
+          example: 4bf92f3577b34da6a3ce929d0e0e4736
+
+  responses:
+    BadRequest:
+      description: Invalid request payload
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: image_base64 is required
+            code: VALIDATION_ERROR
+
+    UnprocessableEntity:
+      description: Request is well-formed but semantically invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: image_base64 is not valid base64
+            code: DECODE_ERROR
+
+    PayloadTooLarge:
+      description: Request payload exceeds 10 MB limit
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: payload exceeds 10 MB limit
+            code: PAYLOAD_TOO_LARGE
+
+    ServiceUnavailable:
+      description: Upstream dependency (Kafka, MinIO, Qdrant) is unreachable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: upstream unavailable
+            code: UPSTREAM_ERROR
