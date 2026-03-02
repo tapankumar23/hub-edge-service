@@ -41,6 +41,7 @@ Use this index to navigate the Edge Hub specification set. All documents are liv
 | ADR | 03 | [Eventual Consistency Model](07_adr/03_eventual_consistency_model.md) | Decision record for data consistency | Architects |
 | Privacy | 01 | [Privacy & Compliance](08_privacy/01_privacy_and_compliance.md) | GDPR, data retention, encryption, privacy masking, governance | Legal, InfoSec, Operators |
 | Research | 01 | [AI Efficiency in Parcel Sorting](09_research/01_ai_efficiency_parcel_sorting_centres.md) | Background research and optimization strategies | Product, Data Science |
+| Future Vision | 01 | [Feature Proposals & Expansion Roadmap](09_research/future_vision.md) | Expansion use cases, phased implementation plan, ROI projections | Product, Architects, Engineering Lead |
 
 ---
 
