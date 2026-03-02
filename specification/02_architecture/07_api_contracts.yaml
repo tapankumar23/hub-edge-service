@@ -374,6 +374,21 @@ components:
           type: string
           description: MinIO object key where the image was stored. Empty string if MinIO unavailable.
           example: capture/550e8400-e29b-41d4-a716-446655440000.jpg
+        damage_classification:
+          type: object
+          nullable: true
+          description: Detected damage on the parcel. Omitted if confidence is below threshold.
+          properties:
+            type:
+              type: string
+              enum: [none, minor, major]
+              description: Severity of the damage.
+            confidence:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+              description: Confidence score of the classification.
 
     Detection:
       type: object

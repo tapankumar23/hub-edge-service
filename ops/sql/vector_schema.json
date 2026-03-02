@@ -1,0 +1,8 @@
+{
+  "collection_name": "parcel_fingerprints",
+  "vectors": {
+    "size": 768,
+    "distance": "Cosine"
+  },
+  "on_disk_payload": true
+}

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Label-Less Sorting — Investor Showcase</title>
+<title>Edge Hub — Executive Briefing</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet">
 <style>
 /* ════════════════════════════════════════════
@@ -188,12 +188,22 @@ body::before {
   font-family:'Playfair Display',serif;
   font-size:clamp(32px,4.5vw,60px);
   font-weight:900; line-height:1.02; letter-spacing:-1px;
-  margin-bottom:20px;
+  margin-bottom:12px;
 }
-.ov-hero h1 em { font-style:italic; color:rgba(0,212,255,.6); }
+.ov-hero h1 .highlight { color:rgba(0,212,255,.6); }
+
+.ov-hero h2 {
+  font-family:'DM Mono',monospace;
+  font-size:14px; font-weight:700; letter-spacing:1px;
+  color:var(--amber); margin-bottom:20px;
+}
+
 .ov-desc {
   font-size:15px; font-weight:400; line-height:1.75;
-  color:rgba(240,244,255,.55); max-width:520px;
+  color:rgba(240,244,255,.55); max-width:620px;
+}
+.hero-kpis {
+  display:flex; gap:20px;
 }
 .hero-kpi {
   background:rgba(255,255,255,.04);
@@ -204,10 +214,34 @@ body::before {
   font-family:'Playfair Display',serif;
   font-size:48px; font-weight:900; color:var(--white); line-height:1;
 }
+.hero-arrow {
+  font-family: sans-serif; /* Simple */
+  font-weight: 700;        /* Bold */
+  font-size: 1.1em;        /* Bigger */
+  margin-right: 4px;       /* Spacing */
+  display: inline-block;
+  vertical-align: bottom;
+}
 .hero-kpi-lbl {
   font-size:10px; letter-spacing:3px; text-transform:uppercase;
   color:rgba(0,212,255,.5); margin-top:6px;
 }
+
+/* Business Value Strip */
+.ov-value-strip {
+  padding:40px 64px;
+  background:linear-gradient(135deg, rgba(0,212,255,.05) 0%, rgba(255,176,32,.03) 100%);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  display:grid; grid-template-columns:repeat(3,1fr); gap:40px;
+}
+.value-item { }
+.value-ico { font-size:28px; margin-bottom:12px; }
+.value-title {
+  font-family:'Playfair Display',serif;
+  font-size:18px; font-weight:700; margin-bottom:8px; color:var(--white);
+}
+.value-body { font-size:13px; color:var(--muted2); line-height:1.7; }
 
 /* Problem strip */
 .ov-problem {
@@ -325,7 +359,7 @@ body::before {
 /* Outcomes */
 .outcomes {
   display:grid;
-  grid-template-columns:repeat(4,1fr);
+  grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
   border:1px solid var(--border);
 }
 .oc-card {
@@ -472,9 +506,45 @@ body::before {
 .d-conveyor.running .d-conv-strips { animation-play-state:running; }
 @keyframes convAnim { from{background-position:0 0;} to{background-position:22px 0;} }
 
+/* Camera Ring */
+.d-cam-ring {
+  position:absolute; bottom:-63px; left:50%; transform:translateX(-50%);
+  width:160px; height:160px;
+  border:2px solid #2a3a50; border-radius:50%;
+  box-shadow:0 0 0 2px rgba(0,212,255,0.05), inset 0 0 40px rgba(0,0,0,0.5);
+  z-index:110; pointer-events:none;
+}
+.d-cam-node {
+  position:absolute; width:44px; height:28px;
+  display:flex; align-items:center; justify-content:center;
+}
+/* Positions: X-fashion - Adjusted to point inwards */
+.cn-tl { top:15%; left:15%; transform:translate(-50%,-50%) rotate(-45deg); }
+.cn-tr { top:15%; right:15%; transform:translate(50%,-50%) rotate(45deg); }
+.cn-bl { bottom:15%; left:15%; transform:translate(-50%,50%) rotate(-135deg); }
+.cn-br { bottom:15%; right:15%; transform:translate(50%,50%) rotate(135deg); }
+
+.d-cam-ring .d-cam-head {
+  transform:scale(0.8); /* Slightly smaller heads */
+  z-index:115;
+}
+
+/* Beams for Ring */
+.d-cam-node .d-scan-beam {
+  position:absolute; top:50%; left:50%;
+  width:100px; height:140px;
+  background:linear-gradient(180deg,rgba(0,212,255,.3),transparent);
+  clip-path:polygon(40% 0%,60% 0%,100% 100%,0% 100%);
+  transform-origin:top center;
+  transform:translateX(-50%) rotate(0deg); /* Points down from camera */
+  z-index:-1;
+}
+/* Scanning state */
+.d-cam-head.scanning ~ .d-scan-beam { opacity:1; }
+
 /* Camera */
 .d-cam-station {
-  position:absolute; top:-50px; left:50%; transform:translateX(-50%);
+  position:absolute; top:-50px;
   display:flex; flex-direction:column; align-items:center; gap:4px;
 }
 .d-cam-pole { width:3px; height:36px; background:#253448; border-radius:2px; }
@@ -940,6 +1010,45 @@ body::before {
   width:8px; height:8px; border-radius:50%; flex-shrink:0;
 }
 
+/* Data Table */
+.data-table-section {
+  padding: 48px 64px;
+  background: rgba(0,212,255,0.02);
+  border-top: 1px solid var(--border);
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  color: var(--muted2);
+}
+.data-table th, .data-table td {
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.data-table th {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--cyan);
+  font-weight: 500;
+}
+.data-table tr:hover td {
+  background: rgba(255,255,255,0.02);
+  color: var(--white);
+}
+.data-table td.num {
+  text-align: right;
+  font-family: 'DM Mono', monospace;
+}
+.data-table tr.total-row td {
+  font-weight: 700;
+  color: var(--white);
+  border-top: 2px solid var(--border2);
+  background: rgba(255,255,255,0.04);
+}
 </style>
 </head>
 <body>
@@ -947,21 +1056,22 @@ body::before {
 <!-- ══════════════════════════════════════ CHROME ══════════════════════════════════════ -->
 <div class="chrome">
   <div class="chrome-top">
-    <div class="brand">Label<em>-Less</em> Sorting System</div>
+    <div class="brand"><em>Hub</em> Edge <em>Service</em></div>
     <div class="chrome-stats">
       <div class="cstat"><div class="cstat-val" id="gCounter">0</div><div class="cstat-lbl">Parcels Sorted</div></div>
       <div class="cstat"><div class="cstat-val g">99.4%</div><div class="cstat-lbl">Accuracy</div></div>
-      <div class="cstat"><div class="cstat-val a" id="gLatency">—</div><div class="cstat-lbl">Latency</div></div>
+      <div class="cstat"><div class="cstat-val a" id="gLatency">—</div><div class="cstat-lbl">Speed</div></div>
     </div>
-    <div class="live-pill"><div class="live-dot"></div>Investor Showcase</div>
   </div>
   <div class="tabs">
-    <button class="tab active" onclick="switchTab(0)">🏠 Overview</button>
+    <button class="tab active" onclick="switchTab(0)">🏢 Overview</button>
     <button class="tab" onclick="switchTab(1)">▶ Live Demo <span class="tab-badge">!</span></button>
     <button class="tab" onclick="switchTab(2)">📋 Business Flow</button>
-    <button class="tab" onclick="switchTab(3)">⚙️ Technical Detail</button>
+    <button class="tab" onclick="switchTab(3)">⚙️ Technical Details</button>
+    <button class="tab" onclick="switchTab(4)">🏗 Architecture</button>
   </div>
 </div>
+
 
 <!-- ══════════════════════════════════════ PANELS ══════════════════════════════════════ -->
 <div class="panels">
@@ -970,71 +1080,85 @@ body::before {
 <div class="panel active" id="tab0">
   <div class="ov-hero">
     <div>
-      <div class="ov-eyebrow">Executive Overview · Confidential</div>
-      <h1>Sorting Parcels<br><em>Without a Label.</em></h1>
-      <p class="ov-desc">Our AI-powered system identifies and routes every parcel purely from its visual appearance — no barcodes, no labels, no manual scanning. Faster, smarter, and more resilient than anything on the market.</p>
+      <h1>Label-Less <span class="highlight">Sorting</span></h1>
+      <p class="ov-desc">Our AI-powered system identifies and routes every parcel from its appearance alone—no barcodes, no labels, no manual scanning. Faster, more resilient, and more profitable than traditional systems.</p>
     </div>
-    <div class="hero-kpi">
-      <div class="hero-kpi-val">99.4%</div>
-      <div class="hero-kpi-lbl">Sort Accuracy</div>
+    <div class="hero-kpis">
+      <div class="hero-kpi">
+        <div class="hero-kpi-val">99.4%</div>
+        <div class="hero-kpi-lbl">Sort Accuracy</div>
+      </div>
+      <div class="hero-kpi">
+        <div class="hero-kpi-val"><span class="hero-arrow">↓</span>68%</div>
+        <div class="hero-kpi-lbl">Decrease in Mis-Sorts</div>
+      </div>
+      <div class="hero-kpi">
+        <div class="hero-kpi-val"><span class="hero-arrow">↑</span>20%</div>
+        <div class="hero-kpi-lbl">Increase in Throughput</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VALUE STRIP -->
+  <div class="ov-value-strip">
+    <div class="value-item">
+      <div class="value-ico">💼</div>
+      <div class="value-title">Operational</div>
+      <div class="value-body">Fewer mis-sorts, shorter cycle times, and zero label dependency means higher throughput and lower customer complaints.</div>
+    </div>
+    <div class="value-item">
+      <div class="value-ico">🔧</div>
+      <div class="value-title">Resilience</div>
+      <div class="value-body">Lost labels? Network down? System keeps sorting. Edge-first design with automatic fallbacks ensures zero downtime operations.</div>
+    </div>
+    <div class="value-item">
+      <div class="value-ico">🔒</div>
+      <div class="value-title">Compliance</div>
+      <div class="value-body">Private by design. All faces and plates masked automatically. GDPR and CCPA ready on day one. No audit findings.</div>
     </div>
   </div>
 
   <div class="ov-problem">
     <div class="prob-icon">⚠️</div>
     <div>
-      <div class="prob-title">The Problem We're Solving</div>
-      <p class="prob-body">Every year, billions of parcels fail to sort correctly because labels are damaged, missing, or unreadable. This causes delays, customer complaints, and costly manual re-processing. Traditional barcode systems have no fallback. We built one.</p>
+      <div class="prob-title">The Business Problem</div>
+      <p class="prob-body">Today's sorting facilities rely entirely on barcode labels. Damaged, missing, or unreadable labels cause manual re-processing, missed SLAs, and customer complaints. A 2.5% mis-sort rate costs millions annually. We've built a system that doesn't need labels at all.</p>
     </div>
   </div>
 
   <div class="ov-section">
     <div class="ov-section-title">How It Works</div>
-    <h2>Five Steps from Arrival to Dispatch</h2>
-    <p>Our end-to-end process is fully automated. A parcel enters the hub and exits sorted — in under 200 milliseconds.</p>
+    <h2>Five Simple Steps to Perfect Sorting</h2>
+    <p>Automated end-to-end. A parcel enters and exits sorted in under 200 milliseconds.</p>
 
     <div class="journey">
-      <div class="jstep"><div class="jstep-num">1</div><div class="jstep-ico">🚛</div><div class="jstep-title">Parcel Arrives</div><p class="jstep-desc">Vehicle docks at the hub. Parcel placed on the intake conveyor belt.</p></div>
-      <div class="jstep"><div class="jstep-num">2</div><div class="jstep-ico">📷</div><div class="jstep-title">Cameras Capture It</div><p class="jstep-desc">Four cameras photograph every angle simultaneously while the parcel keeps moving.</p></div>
-      <div class="jstep"><div class="jstep-num">3</div><div class="jstep-ico">🧠</div><div class="jstep-title">AI Identifies It</div><p class="jstep-desc">Our AI reads its unique visual fingerprint and matches it to a profile or creates one instantly.</p></div>
-      <div class="jstep"><div class="jstep-num">4</div><div class="jstep-ico">🗺️</div><div class="jstep-title">Routing Decision</div><p class="jstep-desc">Destination determined in milliseconds using local rules or cloud logic.</p></div>
-      <div class="jstep"><div class="jstep-num">5</div><div class="jstep-ico">✅</div><div class="jstep-title">Sorted & Dispatched</div><p class="jstep-desc">Gate diverts the parcel to the correct outbound chute. Total time: &lt;200ms.</p></div>
-    </div>
-
-    <div class="decision-fork">
-      <div class="df-label">What happens when…</div>
-      <div class="df-card"><div class="df-pill pgreen">✓ Known Parcel</div><div class="df-head">We've seen it before</div><p class="df-body">Matched to an existing profile above 87% confidence. History updated and routed instantly — no human involvement.</p></div>
-      <div class="df-card"><div class="df-pill pblue">+ New Parcel</div><div class="df-head">Brand new to the system</div><p class="df-body">A fresh digital identity is created on the spot and the parcel is routed just as quickly as any other.</p></div>
-      <div class="df-card"><div class="df-pill pamber">⚡ System Disruption</div><div class="df-head">Something goes wrong</div><p class="df-body">Built-in fallbacks ensure parcels keep moving even if the network is down or a component fails. Zero downtime by design.</p></div>
+      <div class="jstep"><div class="jstep-num">1</div><div class="jstep-ico">🚛</div><div class="jstep-title">Parcel Arrives</div><p class="jstep-desc">Vehicle docks. Parcel placed on intake belt.</p></div>
+      <div class="jstep"><div class="jstep-num">2</div><div class="jstep-ico">📷</div><div class="jstep-title">Cameras Capture</div><p class="jstep-desc">4 cameras photograph all angles simultaneously.</p></div>
+      <div class="jstep"><div class="jstep-num">3</div><div class="jstep-ico">🧠</div><div class="jstep-title">AI Identifies</div><p class="jstep-desc">Visual fingerprint matched to existing records.</p></div>
+      <div class="jstep"><div class="jstep-num">4</div><div class="jstep-ico">🗺️</div><div class="jstep-title">Route Decided</div><p class="jstep-desc">Destination determined in milliseconds.</p></div>
+      <div class="jstep"><div class="jstep-num">5</div><div class="jstep-ico">✅</div><div class="jstep-title">Sorted & Dispatched</div><p class="jstep-desc">Gate diverts to correct chute. &lt;200ms total.</p></div>
     </div>
   </div>
 
   <div class="ov-section" style="margin-top:48px;">
     <div class="ov-section-title">Business Outcomes</div>
-    <h2>What This Means for the Business</h2>
-    <p>Real, measurable impact from day one of deployment.</p>
+    <h2>Measurable Impact from Day One</h2>
     <div class="outcomes">
-      <div class="oc-card"><div class="oc-ico">⚡</div><div class="oc-val c">&lt;200ms</div><div class="oc-title">End-to-End Speed</div><p class="oc-sub">Capture to sort instruction — faster than a human blink. Throughput limited only by conveyor speed.</p></div>
-      <div class="oc-card"><div class="oc-ico">🎯</div><div class="oc-val g">99.4%</div><div class="oc-title">Sort Accuracy</div><p class="oc-sub">Dramatically fewer misrouted parcels, fewer complaints, and lower re-processing costs.</p></div>
-      <div class="oc-card"><div class="oc-ico">🔄</div><div class="oc-val">Zero</div><div class="oc-title">Downtime by Design</div><p class="oc-sub">Automatic fallbacks keep the system sorting through outages and component failures.</p></div>
-      <div class="oc-card"><div class="oc-ico">📈</div><div class="oc-val c">∞</div><div class="oc-title">Scales Without Limits</div><p class="oc-sub">From 1,000 to 1,000,000 parcels per day — scales seamlessly with no extra headcount.</p></div>
+      <div class="oc-card"><div class="oc-ico">⚡</div><div class="oc-val c">5/sec</div><div class="oc-title">Throughput</div><p class="oc-sub">5+ parcels per second. Zero bottlenecks.</p></div>
+      <div class="oc-card"><div class="oc-ico">🎯</div><div class="oc-val g">99.4%</div><div class="oc-title">Accuracy</div><p class="oc-sub">From 97.5% → 99.4%. 68% fewer mis-sorts.</p></div>
+      <div class="oc-card"><div class="oc-ico">🔄</div><div class="oc-val">99.9%</div><div class="oc-title">Availability</div><p class="oc-sub">Zero downtime by design. Automatic fallbacks.</p></div>
+      <div class="oc-card"><div class="oc-ico">📈</div><div class="oc-val c">1.58L</div><div class="oc-title">Total Volume</div><p class="oc-sub">Total shipments processed across all regions: 1,58,277.</p></div>
+      <div class="oc-card"><div class="oc-ico">₹</div><div class="oc-val g">₹ 12.6L</div><div class="oc-title">Est. Savings</div><p class="oc-sub">Projected daily savings based on reduced manual handling (₹8/parcel avg).</p></div>
     </div>
   </div>
 
-  <div class="benefits-strip">
-    <div class="ben"><div class="ben-ico">🏭</div><h3>No Labels Required</h3><p>Damaged, missing, or unreadable labels are no longer a problem. Our AI works from the physical parcel itself — making every item sortable, every time.</p></div>
-    <div class="ben"><div class="ben-ico">🌐</div><h3>Works Everywhere</h3><p>Operates fully offline at remote sites, synchronises automatically when reconnected. One system, any location, any network condition.</p></div>
-    <div class="ben"><div class="ben-ico">🔒</div><h3>Compliant from Day One</h3><p>Privacy regulations built into the process. Faces and personal data automatically anonymised before any storage — GDPR and CCPA ready.</p></div>
-  </div>
-
   <div class="compliance-row">
-    <div class="compliance-lbl">Compliance</div>
+    <div class="compliance-lbl">Compliance Built-In</div>
     <div class="cp-pills">
       <div class="cp-pill">GDPR Ready</div>
       <div class="cp-pill">CCPA Compliant</div>
-      <div class="cp-pill">Data Anonymisation</div>
+      <div class="cp-pill">Auto-Anonymization</div>
       <div class="cp-pill">Audit Logging</div>
-      <div class="cp-pill">Offline-First Architecture</div>
     </div>
   </div>
 </div>
@@ -1067,13 +1191,28 @@ body::before {
         </div>
 
         <div class="d-conveyor" id="dConveyor">
-          <div class="d-conv-strips"></div>
-          <div class="d-cam-station" id="dCamStation">
-            <div class="d-cam-head" id="dCamHead">📷<div class="d-cam-flash"></div></div>
-            <div class="d-scan-beam" id="dScanBeam"></div>
-            <div class="d-cam-pole"></div>
+            <div class="d-conv-strips"></div>
+            
+            <!-- X-Fashion Camera Ring -->
+            <div class="d-cam-ring">
+              <div class="d-cam-node cn-tl">
+                <div class="d-cam-head">📷<div class="d-cam-flash"></div></div>
+                <div class="d-scan-beam"></div>
+              </div>
+              <div class="d-cam-node cn-tr">
+                <div class="d-cam-head">📷<div class="d-cam-flash"></div></div>
+                <div class="d-scan-beam"></div>
+              </div>
+              <div class="d-cam-node cn-bl">
+                <div class="d-cam-head">📷<div class="d-cam-flash"></div></div>
+                <div class="d-scan-beam"></div>
+              </div>
+              <div class="d-cam-node cn-br">
+                <div class="d-cam-head">📷<div class="d-cam-flash"></div></div>
+                <div class="d-scan-beam"></div>
+              </div>
+            </div>
           </div>
-        </div>
 
         <div class="d-chutes">
           <div class="d-chute" id="dcA"><div class="d-chute-dot"></div><div class="d-chute-name">Zone A</div></div>
@@ -1318,13 +1457,64 @@ body::before {
   </div>
 </div>
 
-<!-- ④ TECHNICAL DETAIL ══════════════════════════════ -->
+<!-- ④ TECHNICAL  ══════════════════════════════ -->
 <div class="panel" id="tab3">
   <div class="tf-wrap">
     <div class="bf-title-block">
-      <div class="bf-eyebrow">Engineering Reference</div>
-      <h2>Technical System Architecture</h2>
-      <p>Component-level breakdown for engineering, due diligence, and technical stakeholders.</p>
+      <h2>Architecture & Hardware</h2>
+      <p>Complete technical architecture with integrated hardware specifications for engineering, due diligence, and technical stakeholders.</p>
+    </div>
+
+    <!-- ═══ HARDWARE SPECIFICATIONS (PROMINENT SECTION) ═══ -->
+    <div style="margin-bottom: 48px; border: 2px solid var(--cyan); border-radius: 6px; background: linear-gradient(135deg, rgba(0,212,255,0.08) 0%, rgba(0,212,255,0.02) 100%); padding: 32px; box-shadow: 0 0 40px rgba(0,212,255,0.1);">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+        <div style="font-size: 32px;">⚙️</div>
+        <div>
+          <div style="font-family:'DM Mono',monospace; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--cyan); font-weight:700;">Core Hardware</div>
+          <div style="font-family:'Playfair Display',serif; font-size:28px; font-weight:900; color:var(--white); line-height:1.1;">Edge Device Specifications</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
+        <div style="background: rgba(0,212,255,0.03); border: 1px solid rgba(0,212,255,0.2); border-radius: 4px; padding: 24px;">
+          <div style="font-size: 28px; margin-bottom: 12px;">💾</div>
+          <div style="font-family:'Playfair Display',serif; font-size: 16px; font-weight: 700; color: var(--white); margin-bottom: 12px;">Processor & Compute</div>
+          <div style="font-weight: 700; color: var(--cyan); margin-bottom: 8px;">Industrial Edge Gateway</div>
+          <ul style="font-size: 13px; color: var(--muted2); line-height: 1.8; list-style-position: inside; margin: 0; padding: 0;">
+            <li><strong>CPU:</strong> NVIDIA Jetson Orin NX</li>
+            <li><strong>NPU:</strong> 100 TOPS Accelerator</li>
+            <li><strong>Memory:</strong> 16GB LPDDR5 RAM</li>
+            <li><strong>Storage:</strong> 256GB NVMe SSD</li>
+            <li><strong>Throughput:</strong> 5+ parcels/sec</li>
+          </ul>
+        </div>
+
+        <div style="background: rgba(0,212,255,0.03); border: 1px solid rgba(0,212,255,0.2); border-radius: 4px; padding: 24px;">
+          <div style="font-size: 28px; margin-bottom: 12px;">📷</div>
+          <div style="font-family:'Playfair Display',serif; font-size: 16px; font-weight: 700; color: var(--white); margin-bottom: 12px;">Camera & Imaging</div>
+          <div style="font-weight: 700; color: var(--cyan); margin-bottom: 8px;">Professional Sensor Array</div>
+          <ul style="font-size: 13px; color: var(--muted2); line-height: 1.8; list-style-position: inside; margin: 0; padding: 0;">
+            <li><strong>Sensor:</strong> Global Shutter (4×)</li>
+            <li><strong>Resolution:</strong> 1080p HD @ 60 FPS</li>
+            <li><strong>Interface:</strong> GMSL2 / USB 3.1</li>
+            <li><strong>Capture:</strong> HDR + IR assist</li>
+            <li><strong>Frame Sync:</strong> Simultaneous 4-angle</li>
+          </ul>
+        </div>
+
+        <div style="background: rgba(0,212,255,0.03); border: 1px solid rgba(0,212,255,0.2); border-radius: 4px; padding: 24px;">
+          <div style="font-size: 28px; margin-bottom: 12px;">🌐</div>
+          <div style="font-family:'Playfair Display',serif; font-size: 16px; font-weight: 700; color: var(--white); margin-bottom: 12px;">Networking & Power</div>
+          <div style="font-weight: 700; color: var(--cyan); margin-bottom: 8px;">Industrial Connectivity</div>
+          <ul style="font-size: 13px; color: var(--muted2); line-height: 1.8; list-style-position: inside; margin: 0; padding: 0;">
+            <li><strong>Ethernet:</strong> Dual Gigabit PoE+</li>
+            <li><strong>Protocols:</strong> TCP/IP, MQTT, HTTP/2</li>
+            <li><strong>Power:</strong> 12-24V DC input</li>
+            <li><strong>Mount:</strong> Industrial DIN Rail</li>
+            <li><strong>Certification:</strong> IP67 ready</li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <div class="tf-metrics">
@@ -1336,6 +1526,15 @@ body::before {
       <div class="tf-metric"><div class="tf-m-val">768-D</div><div class="tf-m-lbl">Embedding Vector</div></div>
       <div class="tf-metric"><div class="tf-m-val g">A–F</div><div class="tf-m-lbl">Sort Zones</div></div>
     </div>
+
+    <!-- ═══ TECHNICAL FEATURES SECTION ═══ -->
+    <div style="margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border);">
+      <div style="font-family:'DM Mono',monospace; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom: 20px;">Software Architecture</div>
+
+      <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
+        <button onclick="switchTab(4)" style="padding:8px 12px; border:1px solid var(--border); background:rgba(0,212,255,0.08); color:var(--cyan); font-family:'DM Mono',monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; cursor:pointer; border-radius:4px;">Open Architecture</button>
+      </div>
+      <!-- Architecture moved to dedicated tab -->
 
     <div class="tf-grid" style="margin-top:24px;">
 
@@ -1446,7 +1645,7 @@ body::before {
           <div class="tf-spec"><b>Access:</b> Operator dashboard</div>
         </div>
       </div>
-
+    </div>
     </div>
 
     <!-- Fallback Flows -->
@@ -1482,6 +1681,73 @@ body::before {
   </div>
 </div>
 
+<!-- ⑤ ARCHITECTURE  ══════════════════════════════ -->
+<div class="panel" id="tab4">
+  <div class="tf-wrap" style="padding: 0; display: flex; flex-direction: column; height: 100%;">
+    <div class="bf-title-block" style="padding: 40px 56px 24px;">
+      <h2>System Architecture Diagram</h2>
+      <p>Interactive diagram showing edge services, messaging systems, data stores, and cloud integrations.</p>
+    </div>
+    <div style="flex: 1; background: #FFFFFF; overflow: hidden; position: relative;">
+
+      <!-- Dynamic mxGraph Loader -->
+      <div id="mxgraph-container" style="width: 100%; height: 100%;"></div>
+      <script>
+        (function() {
+          const container = document.getElementById('mxgraph-container');
+          const url = '../../specification/02_architecture/architecture.drawio';
+          
+          fetch(url)
+            .then(response => {
+              if (!response.ok) throw new Error('Network response was not ok');
+              return response.text();
+            })
+            .then(xml => {
+               // Remove newlines to be safe for JSON
+               const cleanXml = xml.replace(/\r?\n|\r/g, '');
+               
+               const div = document.createElement('div');
+               div.className = 'mxgraph';
+               div.style.maxWidth = '100%';
+               div.style.height = '100%';
+               
+               const config = {
+                   highlight: "#0000ff",
+                   nav: true,
+                   resize: true,
+                   toolbar: "zoom layers tags lightbox",
+                   xml: cleanXml
+               };
+               div.dataset.mxgraph = JSON.stringify(config);
+               
+               container.innerHTML = '';
+               container.appendChild(div);
+               
+               // Load viewer script dynamically
+               if (!window.GraphViewer) {
+                   const script = document.createElement('script');
+                   script.src = 'https://viewer.diagrams.net/js/viewer-static.min.js';
+                   document.body.appendChild(script);
+               } else {
+                   // If already loaded, we might need to trigger it manually?
+                   // Viewer usually runs on load. 
+                   // But let's assume it's not loaded or will re-scan.
+                   // GraphViewer.processElements() is the function if available.
+                   if (window.GraphViewer && window.GraphViewer.processElements) {
+                       window.GraphViewer.processElements();
+                   }
+               }
+            })
+            .catch(error => {
+              console.error('Error loading diagram:', error);
+              container.innerHTML = '<div style="padding:20px; color:red;">Error loading diagram: ' + error.message + '<br>Note: If opening locally via file://, browser security blocks loading external files. Please use a local web server (e.g. `python3 -m http.server 3000`).</div>';
+            });
+        })();
+      </script>
+
+    </div>
+  </div>
+</div>
 </div><!-- /panels -->
 
 <!-- ══════════════════════════════════════════════════════
@@ -1571,7 +1837,7 @@ function demoStart() {
     p.style.left = (cR.left - sR.left + cR.width * .5 - 13)+'px';
     p.style.top  = (cR.top  - sR.top  + 7)+'px';
     setTimeout(() => {
-      document.getElementById('dCamHead').classList.add('scanning');
+      document.querySelectorAll('.d-cam-head').forEach(el=>el.classList.add('scanning'));
       p.classList.add('scanned');
       setDLatency('48ms');
     }, 900);
@@ -1581,7 +1847,7 @@ function demoStart() {
   dT(() => {
     setDS(3,'done'); setDS(4,'active'); setDProg(52);
     setDNarr('🧠 <span class="hl">AI Vision Engine</span> reading visual fingerprint — shape, texture, colour pattern.');
-    document.getElementById('dCamHead').classList.remove('scanning');
+    document.querySelectorAll('.d-cam-head').forEach(el=>el.classList.remove('scanning'));
     const ap = document.getElementById('dAiPanel');
     ap.classList.add('active');
     const vals = [92,87,78,98];
@@ -1666,7 +1932,7 @@ function demoReset() {
   document.getElementById('dTruck').classList.remove('arrived');
   document.getElementById('dDock').classList.remove('open');
   document.getElementById('dConveyor').classList.remove('running');
-  document.getElementById('dCamHead').classList.remove('scanning');
+  document.querySelectorAll('.d-cam-head').forEach(el=>el.classList.remove('scanning'));
   document.getElementById('dAiPanel').classList.remove('active');
   ['db1','db2','db3','db4'].forEach(id=>{const b=document.getElementById(id);b.style.transition='none';b.style.width='0%';});
   const p=document.getElementById('dParcel');

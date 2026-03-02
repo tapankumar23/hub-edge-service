@@ -1,0 +1,130 @@
+<mxfile host="65bd71144e">
+    <diagram id="end2end" name="End-to-End Flow">
+        <mxGraphModel dx="3002" dy="1641" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1080" background="#FFFFFF" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="dashboard" value="🖥️ UI Dashboard&#10;http://localhost:3000" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor:#4f46e5;strokeColor:#3730a3;fontColor=#000000;fontSize=12;fontStyle=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="-90" width="220" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="camera" value="📷 Camera Ingestion&#10;http://localhost:8081" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor=#10b981;strokeColor:#059669;fontColor=#000000;fontSize=12;fontStyle=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="-110" y="360" width="220" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="" style="edgeStyle=none;html=1;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" edge="1" parent="1" source="kafka" target="kafkaui">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="kafka" value="🔄 Kafka (Redpanda)&#10;redpanda:9092 / localhost:9092" style="shape=mxgraph.flowchart.data;rounded=1;whiteSpace=wrap;html=1;fillColor=#f59e0b;strokeColor=#000000;fontColor=#000000;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="450" y="360" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="kafkaui" value="📨 Kafka UI&#10;http://localhost:8087" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor=#4f46e5;strokeColor:#3730a3;fontColor=#000000;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="495" y="515" width="150" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="inference" value="🧠 Inference Service&#10;http://localhost:8082" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor=#10b981;strokeColor:#059669;fontColor=#000000;fontSize=12;fontStyle=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="450" y="60" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="minio" value="🪣 MinIO S3&#10;API: 9000 | Console: 9001" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor=#ff9900;strokeColor=#000000;fontColor=#000000;fontSize=12;fontStyle=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="210" width="140" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="identity" value="🔍 Identity Service&#10;http://localhost:8083" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor=#10b981;strokeColor=#000000;fontColor=#000000;fontSize=12;fontStyle=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="950" y="360" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="qdrant" value="🧬 Qdrant Vector DB&#10;host.docker.internal:6333" style="shape=cylinder;rounded=1;whiteSpace=wrap;html=1;fillColor:#9d4edd;strokeColor:#6d28d9;fontColor=#000000;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="950" y="550" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="postgres" value="🗄️ PostgreSQL&#10;host.docker.internal:5433" style="shape=cylinder;rounded=1;whiteSpace=wrap;html=1;fillColor=#336791;strokeColor=#000000;fontColor=#000000;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1380" y="360" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="2" style="edgeStyle=none;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" edge="1" parent="1" source="sync" target="cloud">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="&lt;span style=&quot;&quot;&gt;POST sync payloads&lt;/span&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#000000;" vertex="1" connectable="0" parent="2">
+                    <mxGeometry x="-0.0694" y="-1" relative="1" as="geometry">
+                        <mxPoint x="-1" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="5" value="&lt;span style=&quot;color: #000000; &quot;&gt;poll sync_outbox&lt;/span&gt;" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" edge="1" parent="1" source="sync" target="postgres">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sync" value="☁️ Sync Service&#10;http://localhost:8084" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor:#10b981;strokeColor=#000000;fontColor=#000000;fontSize=12;fontStyle=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="1380" y="190" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="cloud" value="☁️ Cloud Sync API&#10;https://cloud.example.com/edge/sync" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor=#a855f7;strokeColor:#7e22ce;fontColor=#000000;fontSize=12;fontStyle=1;dashed=1;dashPattern=5 5;" parent="1" vertex="1">
+                    <mxGeometry x="1800" y="190" width="260" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="routing" value="🗺️ Routing Service&#10;http://localhost:8085" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor:#10b981;strokeColor:#059669;fontColor:#ffffff;fontSize=12;fontStyle=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="1060" y="-110" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="routingapi" value="🌍 Cloud Routing API&#10;https://cloud.example.com/route" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor=#a855f7;strokeColor:#7e22ce;fontColor=#000000;fontSize=12;fontStyle=1;dashed=1;dashPattern=5 5;" parent="1" vertex="1">
+                    <mxGeometry x="1440" y="-110" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="monitoring" value="⚠️ Monitoring Service&#10;http://localhost:8086" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor:#10b981;strokeColor:#059669;fontColor=#000000;fontSize=12;fontStyle=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="-90" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="prom" value="📈 Prometheus&#10;http://localhost:9090" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor:#06b6d4;strokeColor:#0891b2;fontColor=#000000;fontSize=12;fontStyle=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="-300" y="-90" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="grafana" value="📊 Grafana&#10;http://localhost:3001" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor:#4f46e5;strokeColor=#000000;fontColor=#000000;fontSize=12;fontStyle=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="-640" y="-90" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_dash_cam" value="&lt;font style=&quot;&quot;&gt;POST /ingest&lt;/font&gt;" style="endArrow=block;html=1;rounded=0;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" parent="1" source="dashboard" target="camera" edge="1">
+                    <mxGeometry x="-0.0008" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_cam_kafka" value="frames" style="endArrow=block;html=1;rounded=0;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" parent="1" source="camera" target="kafka" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_inf_consume" value="consume frames" style="endArrow=block;html=1;rounded=0;" parent="1" source="kafka" target="inference" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_inf_minio" value="&lt;font style=&quot;&quot;&gt;S3 put image&lt;/font&gt;" style="endArrow=block;html=1;rounded=0;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" parent="1" source="inference" target="minio" edge="1">
+                    <mxGeometry x="0.0013" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_inf_kafka" value="&lt;span style=&quot;&quot;&gt;&lt;font color=&quot;#000000&quot;&gt;publish inference_results&lt;/font&gt;&lt;/span&gt;" style="endArrow=block;html=1;rounded=0;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" parent="1" source="inference" target="kafka" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_id_consume" value="&lt;font style=&quot;&quot; color=&quot;#000000&quot;&gt;consume inference_results&lt;/font&gt;" style="endArrow=block;html=1;rounded=0;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" parent="1" source="kafka" target="identity" edge="1">
+                    <mxGeometry x="-0.0018" y="-10" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_id_qdrant" value="vector upsert/search" style="endArrow=block;html=1;rounded=0;strokeColor=#000000;" parent="1" source="identity" target="qdrant" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_id_pg" value="insert parcels/events&#10;enqueue sync_outbox" style="endArrow=block;html=1;rounded=0;strokeColor=#000000;strokeWidth=2;" parent="1" source="identity" target="postgres" edge="1">
+                    <mxGeometry x="-0.0019" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_route_cloud" value="POST /route" style="endArrow=block;html=1;rounded=0;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" parent="1" source="routing" target="routingapi" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_mon_prom" value="scrape /metrics" style="endArrow=block;html=1;rounded=0;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" parent="1" source="prom" target="monitoring" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_graf_prom" value="query" style="endArrow=block;html=1;rounded=0;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" parent="1" source="grafana" target="prom" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_dash_infer" value="&lt;span style=&quot;&quot;&gt;&lt;font color=&quot;#000000&quot;&gt;HTTP /infer&lt;/font&gt;&lt;/span&gt;" style="endArrow=block;html=1;rounded=0;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" parent="1" source="dashboard" target="inference" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_dash_ident" value="HTTP /identify" style="endArrow=block;html=1;rounded=0;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" parent="1" source="dashboard" target="identity" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_dash_sync" value="HTTP /sync status" style="endArrow=block;html=1;rounded=0;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" parent="1" source="dashboard" target="sync" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_dash_mon" value="HTTP /health" style="endArrow=block;html=1;rounded=0;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" parent="1" source="dashboard" target="monitoring" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_kui_kafka" value="browse topics" style="endArrow=block;html=1;rounded=0;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" parent="1" source="kafkaui" target="kafka" edge="1">
+                    <mxGeometry x="0.0222" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

@@ -1,0 +1,53 @@
+# Default values for edge-hub.
+
+replicaCount: 1
+
+image:
+  repository: app/backend/edge-services
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Database Configuration
+postgres:
+  enabled: true
+  auth:
+    username: edge
+    password: edgepass
+    database: edgehub
+
+# Kafka Configuration
+redpanda:
+  enabled: true
+
+# Vector DB Configuration
+qdrant:
+  enabled: true
+
+# Object Storage
+minio:
+  enabled: true
+  accessKey: minioadmin
+  secretKey: minioadmin

@@ -1,0 +1,194 @@
+services:
+  redpanda:
+    image: redpandadata/redpanda:v23.3.12
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp
+      - "1"
+      - --memory
+      - 1G
+      - --reserve-memory
+      - 0M
+      - --node-id
+      - "0"
+      - --check=false
+      - --kafka-addr
+      - 0.0.0.0:9092
+      - --advertise-kafka-addr
+      - redpanda:9092
+    ports:
+      - "9092:9092"
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: edge
+      POSTGRES_PASSWORD: edgepass
+      POSTGRES_DB: edgehub
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: minio/minio:RELEASE.2024-01-28T22-35-53Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  qdrant:
+    image: qdrant/qdrant:v1.8.3
+    ports:
+      - "6334:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  camera-ingestion:
+    build:
+      context: ./app/backend/camera-ingestion
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+      CAMERA_URLS: ""
+      CAMERA_FPS: "3"
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redpanda
+
+  edge-services-inference:
+    build:
+      context: ./app/backend/edge-services
+    volumes:
+      - ./app/backend/edge-services/models/yolov5s.onnx:/opt/models/yolo.onnx:ro  
+    environment:
+      SERVICE_ROLE: inference
+      KAFKA_BROKERS: redpanda:9092
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+      MINIO_BUCKET: parcels
+      YOLO_MODEL_PATH: /opt/models/yolo.onnx
+      YOLO_INPUT_SIZE: "640"
+      YOLO_CONF_THRESHOLD: "0.25"
+      YOLO_IOU_THRESHOLD: "0.45"
+      YOLO_LABELS: parcel
+      EMBED_MODEL_PATH: ""
+      EMBED_INPUT_SIZE: "224"
+      EMBED_DIM: "768"
+    ports:
+      - "8082:8080"
+    depends_on:
+      - redpanda
+      - minio
+
+  edge-services-identity:
+    build:
+      context: ./app/backend/edge-services
+    environment:
+      SERVICE_ROLE: identity
+      KAFKA_BROKERS: redpanda:9092
+      # POSTGRES_DSN: postgresql://edge:edgepass@postgres:5432/edgehub
+      POSTGRES_DSN: postgresql://postgres:postgres@host.docker.internal:5433/edgehub
+      QDRANT_URL: http://qdrant:6333
+      FINGERPRINT_MATCH_THRESHOLD: "0.85"
+      ENCRYPTION_KEY: "change_me_32_bytes_key__________"
+    ports:
+      - "8083:8080"
+    depends_on:
+      - postgres
+      - qdrant
+      - redpanda
+
+  edge-services-sync:
+    build:
+      context: ./app/backend/edge-services
+    environment:
+      SERVICE_ROLE: sync
+      POSTGRES_DSN: postgresql://postgres:postgres@host.docker.internal:5433/edgehub
+      CLOUD_SYNC_URL: https://cloud.example.com/edge/sync
+      DEVICE_ID: hub-001
+      SIGNING_SECRET: change_me
+    ports:
+      - "8084:8080"
+    depends_on:
+      - postgres
+
+  edge-services-routing:
+    build:
+      context: ./app/backend/edge-services
+    environment:
+      SERVICE_ROLE: routing
+      POSTGRES_DSN: postgresql://postgres:postgres@host.docker.internal:5433/edgehub
+      ROUTING_API_URL: https://cloud.example.com/route
+      ROUTING_TIMEOUT_MS: "500"
+    ports:
+      - "8085:8080"
+    depends_on:
+      - postgres
+
+  edge-services-monitoring:
+    build:
+      context: ./app/backend/edge-services
+    environment:
+      SERVICE_ROLE: monitoring
+      POSTGRES_DSN: postgresql://postgres:postgres@host.docker.internal:5433/edgehub
+    ports:
+      - "8086:8080"
+
+  dashboard:
+    build:
+      context: ./app/frontend/dashboard
+    environment:
+      NEXT_PUBLIC_INGESTION_URL: http://localhost:8081
+      NEXT_PUBLIC_INFERENCE_URL: http://localhost:8082
+      NEXT_PUBLIC_IDENTITY_URL: http://localhost:8083
+      NEXT_PUBLIC_SYNC_URL: http://localhost:8084
+      NEXT_PUBLIC_MONITOR_URL: http://localhost:8086
+    ports:
+      - "3000:3000"
+
+  prometheus:
+    image: prom/prometheus:v2.49.1
+    volumes:
+      - ./ops/infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:10.3.1
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./ops/infra/grafana/provisioning:/etc/grafana/provisioning
+      - ./ops/infra/grafana/dashboards:/var/lib/grafana/dashboards
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: redpanda:9092
+    ports:
+      - "8087:8080"
+    depends_on:
+      - redpanda
+
+volumes:
+  redpanda_data:
+  pg_data:
+  minio_data:
+  qdrant_data:

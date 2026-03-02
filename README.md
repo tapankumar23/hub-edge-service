@@ -72,16 +72,20 @@ Once the containers are running, you can access the various interfaces:
 
 ```
 hub-edge-service/
-├── services/               # Backend microservices
-│   ├── camera-ingestion/   # Go service for camera handling
-│   └── edge-services/      # Python services (Inference, Identity, Sync, Routing)
-├── ui-dashboard/           # Next.js frontend application
-├── specification/          # Detailed product and architecture documentation
-├── helm/                   # Helm charts for Kubernetes deployment
-├── infra/                  # Infrastructure config (Grafana, Prometheus)
-├── models/                 # ML models (e.g., YOLO ONNX)
-├── scripts/                # Helper scripts for testing and maintenance
-└── docker-compose.yml      # Local development orchestration
+├── app/
+│   ├── backend/
+│   │   └── edge-services/
+│   │       └── models/
+│   └── frontend/
+├── ops/
+│   ├── helm/
+│   ├── infra/
+│   ├── scripts/
+│   ├── sql/
+│   └── tests/
+│       └── sample_data/
+├── specification/
+└── docker-compose.yml
 ```
 
 ## 📚 Documentation
@@ -92,13 +96,14 @@ Detailed documentation is available in the `specification/` directory:
 - [System Architecture](specification/02_architecture/01_system_architecture.md)
 - [API Contracts](specification/02_architecture/07_api_contracts.yaml)
 - [Functional Flow](specification/01_product/06_functional_flow.md)
+- [Hardware Specification](specification/03_hardware/01_hardware_spec.md)
 
 ## 🧪 Testing
 
 Run the end-to-end test script:
 
 ```bash
-./scripts/run_p0_e2e.sh
+./ops/scripts/run_p0_e2e.sh
 ```
 
 ## 📜 License

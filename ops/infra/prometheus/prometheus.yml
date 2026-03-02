@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'edge-services'
+    static_configs:
+      - targets: 
+        - 'edge-services-monitoring:8080'
+        - 'edge-services-inference:8080'
+        - 'edge-services-identity:8080'
+        - 'edge-services-sync:8080'
+        - 'edge-services-routing:8080'
+
+  - job_name: 'camera-ingestion'
+    static_configs:
+      - targets: ['camera-ingestion:8081']
