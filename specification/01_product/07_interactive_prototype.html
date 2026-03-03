@@ -449,7 +449,7 @@ body::before {
 /* Hub */
 .d-hub {
   position:absolute; top:8%; left:50%; transform:translateX(-50%);
-  width:660px; height:250px;
+  width:1000px; height:250px;
 }
 .d-wall {
   position:absolute; inset:0;
@@ -641,7 +641,7 @@ body::before {
   z-index:10;
   filter:drop-shadow(0 8px 24px rgba(0,0,0,.5));
 }
-.d-truck.arrived { left:calc(50% - 440px); }
+.d-truck.arrived { left:calc(50% - 490px); }
 
 /* Parcel */
 .d-parcel {
@@ -660,6 +660,15 @@ body::before {
 .d-parcel.vis { opacity:1; }
 .d-parcel.scanned { box-shadow:0 0 18px rgba(0,212,255,.8),0 2px 12px rgba(255,176,32,.4); background:#ffcc60; }
 .d-parcel.routed { background:var(--green); box-shadow:0 0 16px rgba(0,232,122,.6); }
+
+/* Privacy Mask */
+.d-privacy-mask {
+  position:absolute; top:40%; left:30%;
+  font-size:24px; opacity:0; transform:scale(0.5);
+  transition:all .5s cubic-bezier(.34,1.56,.64,1);
+  z-index:200; filter:drop-shadow(0 0 10px rgba(0,212,255,.5));
+}
+.d-privacy-mask.active { opacity:1; transform:scale(1); top:35%; }
 
 /* ID popup */
 .d-id-popup {
@@ -1246,16 +1255,17 @@ body::before {
       </div>
 
       <div class="d-parcel" id="dParcel">📦</div>
+      <div class="d-privacy-mask" id="dPrivacyMask">&#128373;&#65039;</div>
       <div class="d-id-popup" id="dIdPopup">ID: PCL-2024-00847 · MATCH 98.7%</div>
 
-      <svg id="dCloudSvg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;">
+      <svg id="dCloudSvg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:20;">
         <defs>
           <marker id="cArr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
             <path d="M0,0 L0,6 L6,3 z" fill="rgba(0,212,255,.55)"/>
           </marker>
         </defs>
         <path id="dCloudLine" d="" stroke="rgba(0,212,255,.3)" stroke-width="1.5" stroke-dasharray="6,4" fill="none" marker-end="url(#cArr)" opacity="0" style="animation:cDash 1.2s linear infinite;"/>
-        <text id="dCloudIcon" x="0" y="0" font-size="26" opacity="0" text-anchor="middle" dominant-baseline="central">☁️</text>
+        <text id="dCloudIcon" x="0" y="0" font-size="52" opacity="0" text-anchor="middle" dominant-baseline="central">☁️</text>
       </svg>
       <style>@keyframes cDash{from{stroke-dashoffset:40;}to{stroke-dashoffset:0;}}</style>
     </div>
@@ -1785,6 +1795,15 @@ function setDLatency(v) { document.getElementById('gLatency').textContent = v; }
 
 function demoStart() {
   if (dRunning) return;
+  
+  // RESET STATE & SNAP TRUCK BACK
+  demoReset();
+  const tr = document.getElementById('dTruck');
+  tr.style.transition = 'none';
+  tr.classList.remove('arrived');
+  void tr.offsetWidth; // force reflow
+  tr.style.transition = '';
+
   dRunning = true;
   document.getElementById('dStartBtn').disabled = true;
   document.getElementById('dStartBtn').textContent = '● Running…';
@@ -1822,13 +1841,20 @@ function demoStart() {
     const cR = document.getElementById('dConveyor').getBoundingClientRect();
     const p = document.getElementById('dParcel');
     p.style.transition = 'left 1.2s ease, top 1.2s ease';
-    p.style.left = (cR.left - sR.left + cR.width * .35)+'px';
+    p.style.left = (cR.left - sR.left + cR.width * .25)+'px';
     p.style.top  = (cR.top  - sR.top  + 7)+'px';
+    
+    // Show mask
+    const m = document.getElementById('dPrivacyMask');
+    m.style.left = (cR.left - sR.left + cR.width * .25 + 2) + 'px';
+    m.style.top = (cR.top - sR.top - 50) + 'px';
+    m.classList.add('active');
   }, 5000);
 
   // Step 3
   dT(() => {
     setDS(2,'done'); setDS(3,'active'); setDProg(38);
+    document.getElementById('dPrivacyMask').classList.remove('active');
     setDNarr('📷 Parcel passes under <span class="hl">4 cameras</span>. Every angle captured simultaneously.');
     const sR = document.getElementById('dScene').getBoundingClientRect();
     const cR = document.getElementById('dConveyor').getBoundingClientRect();
@@ -1894,7 +1920,7 @@ function demoStart() {
     const sR = document.getElementById('dScene').getBoundingClientRect();
     const hR = document.getElementById('dHub').getBoundingClientRect();
     const sx = hR.right - sR.left - 80, sy = hR.top - sR.top + 40;
-    const ex = sR.width * .78, ey = 32;
+    const ex = sR.width * .85, ey = 50;
     document.getElementById('dCloudLine').setAttribute('d',`M${sx} ${sy} Q${(sx+ex)/2} ${sy-55} ${ex} ${ey}`);
     document.getElementById('dCloudLine').style.opacity='1';
     document.getElementById('dCloudIcon').setAttribute('x',ex);
@@ -1938,6 +1964,7 @@ function demoReset() {
   const p=document.getElementById('dParcel');
   p.classList.remove('vis','scanned','routed');
   document.getElementById('dIdPopup').classList.remove('show');
+  document.getElementById('dPrivacyMask').classList.remove('active');
   document.getElementById('dCloudLine').style.opacity='0';
   document.getElementById('dCloudIcon').style.opacity='0';
   ['dcA','dcB','dcC'].forEach(id=>document.getElementById(id).classList.remove('active'));
